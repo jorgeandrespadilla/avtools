@@ -13,7 +13,7 @@ if __name__ == "__main__":
     transcriber.run(
         input_file=args.input,
         output_file=args.output,
-        hf_token=hf_token,
+        # hf_token=hf_token, # TODO: Uncomment this line to use diarization
     )
 
     print(f"Transcription saved to '{args.output}'")

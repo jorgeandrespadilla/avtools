@@ -6,7 +6,7 @@ class TranscriptionConfig(BaseModel):
     device_id: str
     model: str = "openai/whisper-large-v3"
     task: str = "transcribe" # Options: "transcribe", "translate"
-    language: str | None = None # Whisper auto-detects language
+    language: str | None = "es" # Whisper auto-detects language when set to None
     batch_size: int = 24 # Reduce if running out of memory
     enable_timestamps: bool = False
 
