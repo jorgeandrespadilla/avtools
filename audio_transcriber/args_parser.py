@@ -15,14 +15,14 @@ parser.add_argument(
     required=False,
     default="output.json",
     type=str,
-    help="Path to save the transcribed text (path must exist and end with '.json'). If not provided, the output will be saved in the same directory as the input file (default: 'output.txt').",
+    help="Path to save the transcribed text. Path must exist and end with '.txt' for simplified output or '.json' for detailed output. If not provided, the output will be saved in the same directory as the input file (default: 'output.json').",
 )
 parser.add_argument(
     "--hf-token",
     required=False,
     default=None,
     type=str,
-    help="Provide a hf.co/settings/token for Pyannote.audio to diarise the audio clips. If not provided, it will be searched in the environment variables. If not found, diarization will be skipped. To use this feature, you must have a Hugging Face account and accept the conditions of the model you want to use (by default pyannote/speaker-diarization-3.1).",
+    help="Provide a hf.co/settings/token for Pyannote.audio to diarise the audio clips. If not provided, it will be searched in the environment variables. If not found, diarization will be skipped. To use this feature, follow the instructions in https://huggingface.co/pyannote/speaker-diarization-3.1.",
 )
 
 

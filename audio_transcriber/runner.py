@@ -11,6 +11,16 @@ def build_result(transcript, outputs):
     }
 
 
+def transcript_to_text(transcript: dict):
+    if "speakers" in transcript:
+        return "\n\n".join(
+            f"{speaker['speaker']} ({speaker['timestamp'][0]}-{speaker['timestamp'][1]}):\n{speaker['text']}"
+            for speaker in transcript["speakers"]
+        )
+    else:
+        return transcript["text"]
+
+
 def run(
     input_file: str,
     output_file: str,
@@ -41,5 +51,9 @@ def run(
     else:
         result = build_result([], outputs)
 
-    with open(output_file, "w", encoding="utf8") as fp:
-        json.dump(result, fp, ensure_ascii=False)
+    if output_file.endswith(".txt"):
+        with open(output_file, "w", encoding="utf8") as fp:
+            fp.write(transcript_to_text(result))
+    else:
+        with open(output_file, "w", encoding="utf8") as fp:
+            json.dump(result, fp, ensure_ascii=False)
