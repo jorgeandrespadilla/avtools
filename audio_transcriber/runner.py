@@ -11,8 +11,22 @@ def build_result(transcript, outputs):
     }
 
 
-def transcript_to_text(transcript: dict):
+def group_chunks_by_speaker(chunks: list[dict]) -> list[dict]:
+    new_chunks = []
+    current_speaker = None
+    for chunk in chunks:
+        if current_speaker != chunk["speaker"]:
+            current_speaker = chunk["speaker"]
+            new_chunks.append({"speaker": current_speaker, "timestamp": chunk["timestamp"], "text": ""})
+        new_chunks[-1]["timestamp"] = [new_chunks[-1]["timestamp"][0], chunk["timestamp"][1]]
+        new_chunks[-1]["text"] += chunk["text"]
+    return new_chunks
+
+
+def transcript_to_text(transcript: dict, group_by_speaker: bool = False) -> str:
     if "speakers" in transcript:
+        if group_by_speaker:
+            transcript["speakers"] = group_chunks_by_speaker(transcript["speakers"])
         timestamp_parser = lambda x: f"{x[0]}s - {x[1]}s"
         return "\n\n".join(
             f"{speaker['speaker']} ({timestamp_parser(speaker['timestamp'])}):\n{speaker['text']}"
@@ -54,7 +68,7 @@ def run(
 
     if output_file.endswith(".txt"):
         with open(output_file, "w", encoding="utf8") as fp:
-            fp.write(transcript_to_text(result))
+            fp.write(transcript_to_text(result, group_by_speaker=True))
     else:
         with open(output_file, "w", encoding="utf8") as fp:
             json.dump(result, fp, ensure_ascii=False)
