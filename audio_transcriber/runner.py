@@ -13,8 +13,9 @@ def build_result(transcript, outputs):
 
 def transcript_to_text(transcript: dict):
     if "speakers" in transcript:
+        timestamp_parser = lambda x: f"{x[0]}s - {x[1]}s"
         return "\n\n".join(
-            f"{speaker['speaker']} ({speaker['timestamp'][0]}-{speaker['timestamp'][1]}):\n{speaker['text']}"
+            f"{speaker['speaker']} ({timestamp_parser(speaker['timestamp'])}):\n{speaker['text']}"
             for speaker in transcript["speakers"]
         )
     else:
