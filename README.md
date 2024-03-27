@@ -17,6 +17,8 @@ This project is an AI powered audio transcriber, which is based on the [insanely
 
 ## Usage
 
+### Transcribe
+
 ```bash
 poetry run python cli.py --input <path_to_audio_file> --output <path_to_output_file>
 ```
@@ -32,6 +34,17 @@ To transcribe to a JSON format, use '.json' as the output file extension.
 ```bash
 poetry run python cli.py --input <path_to_audio_file> --output <path_to_output_file>.json
 ```
+
+### Convert to Format
+
+```bash
+poetry run python conversor.py <path_to_input_json_file>.json -f vtt -o <path_to_output_file_without_extension>
+```
+
+Supported formats (`-f`):
+- `txt`
+- `vtt`
+- `srt`
 
 ## Additional Information
 
