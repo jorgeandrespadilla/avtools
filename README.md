@@ -35,7 +35,9 @@ To transcribe to a JSON format, use '.json' as the output file extension.
 poetry run python cli.py --input <path_to_audio_file> --output <path_to_output_file>.json
 ```
 
-### Convert to Format
+### Convert to Format (optional)
+
+> Only available for transcripts in JSON format.
 
 ```bash
 poetry run python conversor.py <path_to_input_json_file>.json -f vtt -o <path_to_output_file_without_extension>
