@@ -1,6 +1,6 @@
 import argparse
 
-from audio_transcriber.utils import convert_video_to_audio
+from audio_transcriber.converter import convert_video_to_audio
 
 def main():
     parser = argparse.ArgumentParser(description="Convert video to audio.")

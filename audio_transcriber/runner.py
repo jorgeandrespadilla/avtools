@@ -27,7 +27,7 @@ def transcript_to_text(transcript: dict, group_by_speaker: bool = False) -> str:
     if "speakers" in transcript:
         if group_by_speaker:
             transcript["speakers"] = group_chunks_by_speaker(transcript["speakers"])
-        timestamp_parser = lambda x: f"{x[0]}s - {x[1]}s"
+        timestamp_parser = lambda x: f"{x[0]}s - {x[1]}s"  # noqa: E731
         return "\n\n".join(
             f"{speaker['speaker']} ({timestamp_parser(speaker['timestamp'])}):\n{speaker['text']}"
             for speaker in transcript["speakers"]

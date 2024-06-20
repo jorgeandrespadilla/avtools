@@ -2,7 +2,6 @@ import argparse
 
 from audio_transcriber.formatter import format_transcript
 
-
 def main():
     parser = argparse.ArgumentParser(description="Convert transcript in JSON format to a subtitle file or plain text.")                                 
     parser.add_argument("input_file", help="Input JSON file path")
