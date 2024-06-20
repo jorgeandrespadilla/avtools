@@ -1,6 +1,5 @@
 from abc import abstractmethod
 import json
-import os
 
 
 class IFormatter:
