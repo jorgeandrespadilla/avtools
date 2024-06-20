@@ -74,6 +74,9 @@ class VttFormatter(IFormatter):
 
 
 def format_transcript(input_path: str, output_format: str, output_path: str, verbose=False):
+    if not input_path.endswith('.json'):
+        raise ValueError("Input file must be a JSON file.")
+    
     with open(input_path, 'r', encoding="utf-8") as file:
         data = json.load(file)
 
