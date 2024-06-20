@@ -6,19 +6,19 @@ authors = ["Jorge Andres Padilla <jorgeandres.padillasalgado@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.10"
-transformers = "^4.38.2"
+python = "^3.11"
+transformers = "^4.41.2"
 optimum = "^1.17.1"
 accelerate = "^0.27.2"
-torch = {version = "^2.2.1+cu121", source = "pytorch-cuda"}
-torchvision = {version = "^0.17.1+cu121", source = "pytorch-cuda"}
-torchaudio = {version = "^2.2.1+cu121", source = "pytorch-cuda"}
+torch = {version = "^2.3.1+cu121", source = "pytorch-cuda"}
+torchvision = {version = "^0.18.1+cu121", source = "pytorch-cuda"}
+torchaudio = {version = "^2.3.1+cu121", source = "pytorch-cuda"}
 ipykernel = "^6.29.3"
 notebook = "^7.1.1"
-pydantic = "^2.6.3"
+pydantic = "^2.7.4"
 rich = "^13.7.1"
 python-dotenv = "^1.0.1"
-pyannote-audio = "^3.1.1"
+pyannote-audio = "^3.3.1"
 
 
 [[tool.poetry.source]]
