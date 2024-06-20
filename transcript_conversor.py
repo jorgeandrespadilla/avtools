@@ -4,7 +4,7 @@ from audio_transcriber.formatter import format_transcript
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Convert JSON to an output format.")
+    parser = argparse.ArgumentParser(description="Convert transcript in JSON format to a subtitle file or plain text.")                                 
     parser.add_argument("input_file", help="Input JSON file path")
     parser.add_argument("-f", "--output_format", default="all", help="Format of the output file (default: srt)", choices=["txt", "vtt", "srt"])
     parser.add_argument("-o", "--output_file", default=".", help="File where the output will be saved (an extension will be added to the file name based on the output format)")
