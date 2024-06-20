@@ -1,5 +1,10 @@
 # Audio Transcriber
 
+## Prerequisites
+
+- Python 3.10 & Poetry
+- (Optional, only required for video conversion) [FFmpeg v7 full build](https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-full.7z) and add the bin folder to the PATH environment variable.
+
 ## Description
 
 This project is an AI powered audio transcriber, which is based on the [insanely-fast-whisper](https://github.com/Vaibhavs10/insanely-fast-whisper) implementation.
