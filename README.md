@@ -28,16 +28,16 @@ This project is an AI powered audio transcriber, which is based on the [insanely
 poetry run python cli.py --input <path_to_audio_file> --output <path_to_output_file>
 ```
 
+To transcribe to a JSON format, use '.json' as the output file extension (recommended).
+
+```bash
+poetry run python cli.py --input <path_to_audio_file> --output <path_to_output_file>.json
+```
+
 To transcribe to a text format, use '.txt' as the output file extension.
 
 ```bash
 poetry run python cli.py --input <path_to_audio_file> --output <path_to_output_file>.txt
-```
-
-To transcribe to a JSON format, use '.json' as the output file extension.
-
-```bash
-poetry run python cli.py --input <path_to_audio_file> --output <path_to_output_file>.json
 ```
 
 ### Convert Video to Audio
