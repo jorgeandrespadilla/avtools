@@ -3,6 +3,39 @@ import argparse
 from audio_transcriber.models import CLIArgs
 
 
+class ArgumentHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
+    """Help message formatter which adds default values to argument help."""
+
+    def _get_help_string(self, action):
+        """
+        Add the default value to the option help message if available.
+
+        ArgumentDefaultsHelpFormatter and BooleanOptionalAction when it isn't
+        already present. This code will do that, detecting cornercases to
+        prevent duplicates or cases where it wouldn't make sense to the end
+        user.
+        """
+        help = action.help
+        if help is None:
+            help = ''
+
+        default = action.default
+
+        # Omit if default value is not given
+        if default is None or default is False:
+            return help
+
+        # Format empty string default value
+        if default == "":
+            return help + ' (default: "")'
+
+        if default is not argparse.SUPPRESS:
+            defaulting_nargs = [argparse.OPTIONAL, argparse.ZERO_OR_MORE]
+            if action.option_strings or action.nargs in defaulting_nargs:
+                help += ' (default: %(default)s)'
+        return help
+
+
 parser = argparse.ArgumentParser(description="Audio Transcriber")
 parser.add_argument(
     "--input",
