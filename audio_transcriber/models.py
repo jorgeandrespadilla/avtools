@@ -1,17 +1,23 @@
+from typing import Literal
 from pydantic import BaseModel
 
+# region Pipelines
 
-class TranscriptionConfig(BaseModel):
+
+class TranscriptionPipelineParams(BaseModel):
     input_file: str
     device_id: str
     model: str = "openai/whisper-large-v3"
-    task: str = "transcribe" # Options: "transcribe", "translate"
-    language: str | None = "es" # Whisper auto-detects language when set to None
-    batch_size: int = 24 # Reduce if running out of memory
+    task: Literal[
+        "transcribe",
+        "translate"
+    ] = "transcribe"
+    language: str | None = "es"  # Whisper auto-detects language when set to None
+    batch_size: int = 24  # Reduce if running out of memory
     enable_timestamps: bool = False
 
 
-class DiarizationConfig(BaseModel):
+class DiarizationPipelineParams(BaseModel):
     input_file: str
     hf_token: str
     device_id: str
@@ -19,6 +25,8 @@ class DiarizationConfig(BaseModel):
     num_speakers: int | None = None
     min_speakers: int | None = None
     max_speakers: int | None = None
+
+# endregion
 
 
 class CLIArgs(BaseModel):

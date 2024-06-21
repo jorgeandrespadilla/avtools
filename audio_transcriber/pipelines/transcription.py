@@ -3,10 +3,10 @@ from transformers import pipeline
 from transformers.utils import is_flash_attn_2_available
 from rich.progress import Progress, TimeElapsedColumn, BarColumn, TextColumn
 
-from audio_transcriber.models import TranscriptionConfig
+from audio_transcriber.models import TranscriptionPipelineParams
 
 
-def run(config: TranscriptionConfig):
+def run(config: TranscriptionPipelineParams):
     pipe = pipeline(
         "automatic-speech-recognition",
         model=config.model,

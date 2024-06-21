@@ -8,7 +8,7 @@ from torchaudio import functional as F
 from transformers.pipelines.audio_utils import ffmpeg_read
 from rich.progress import Progress, TimeElapsedColumn, BarColumn, TextColumn
 
-from audio_transcriber.models import DiarizationConfig
+from audio_transcriber.models import DiarizationPipelineParams
 from audio_transcriber.utils import is_url
 
 
@@ -156,7 +156,7 @@ def post_process_segments_and_transcripts(new_segments, transcript, group_by_spe
     return segmented_preds
 
 
-def run(config: DiarizationConfig, outputs: Any):
+def run(config: DiarizationPipelineParams, outputs: Any):
     diarization_pipeline = Pipeline.from_pretrained(
         checkpoint_path=config.diarization_model,
         use_auth_token=config.hf_token,
