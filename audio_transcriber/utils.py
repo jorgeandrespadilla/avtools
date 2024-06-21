@@ -18,6 +18,20 @@ def is_url(url: str) -> bool:
     return url.startswith("http://") or url.startswith("https://")
 
 
+def is_supported_extension(extension: str, supported_extensions: list[str]) -> bool:
+    """Check if the extension is supported."""
+    return extension.lower() in map(str.lower, supported_extensions)
+
+
+def list_extensions(extensions: list[str], separator: str = ", ") -> str:
+    """Return a string with the list of supported extensions."""
+    def normalize(ext):
+        # Remove the dot if it exists and convert to uppercase
+        normalized_ext = ext[1:] if ext.startswith(".") else ext
+        return normalized_ext.upper()
+    return separator.join(map(normalize, extensions))
+
+
 def file_exists(file_path: str) -> bool:
     return os.path.exists(file_path) and os.path.isfile(file_path)
 
@@ -75,6 +89,7 @@ class FilePath:
 
 # region Validation Methods
 
+
     def file_exists(self) -> bool:
         """Check if the file exists."""
         return self.__full_path.exists() and self.__full_path.is_file()
@@ -88,6 +103,7 @@ class FilePath:
 
 
 # region Path Manipulation Methods
+
 
     def with_full_name(self, name: str) -> 'FilePath':
         """Return a new FilePath with the provided full name (including the extension)."""
