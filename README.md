@@ -63,3 +63,4 @@ Supported formats (`-f`):
 
 - https://github.com/python-poetry/poetry/issues/7685
 - https://github.com/Vaibhavs10/insanely-fast-whisper/issues/183
+- https://pybit.es/articles/how-to-package-and-deploy-cli-apps/
