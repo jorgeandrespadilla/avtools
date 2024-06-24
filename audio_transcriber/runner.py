@@ -1,5 +1,5 @@
 import json
-from audio_transcriber.models import DiarizationConfig, TranscriptionConfig
+from audio_transcriber.models import DiarizationPipelineParams, TranscriptionPipelineParams
 from audio_transcriber.pipelines import transcription, diarization
 
 
@@ -49,7 +49,7 @@ def run(
         )
 
     # Transcription
-    outputs = transcription.run(TranscriptionConfig(
+    outputs = transcription.run(TranscriptionPipelineParams(
         input_file=input_file,
         device_id=device_id,
         enable_timestamps=enable_timestamps,
@@ -57,7 +57,7 @@ def run(
 
     # Diarization
     if hf_token:
-        speakers_transcript = diarization.run(DiarizationConfig(
+        speakers_transcript = diarization.run(DiarizationPipelineParams(
             input_file=input_file,
             device_id=device_id,
             hf_token=hf_token,
