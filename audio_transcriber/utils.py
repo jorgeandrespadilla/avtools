@@ -24,7 +24,7 @@ def is_supported_extension(extension: str, supported_extensions: list[str]) -> b
 
 
 def list_extensions(extensions: list[str], separator: str = ", ") -> str:
-    """Return a string with the list of supported extensions."""
+    """Return a string with the list of supported extensions (without the dot and in uppercase)."""
     def normalize(ext):
         # Remove the dot if it exists and convert to uppercase
         normalized_ext = ext[1:] if ext.startswith(".") else ext
