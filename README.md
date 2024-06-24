@@ -43,7 +43,7 @@ poetry run python cli.py --input <path_to_audio_file> --output <path_to_output_f
 ### Convert Video to Audio
 
 ```bash
-poetry run python video_to_audio_converter.py <path_to_input_video_file>.mp4 -o <path_to_output_audio_file>.mp3
+poetry run python video_to_audio_converter.py -i <path_to_input_video_file>.mp4 -o <path_to_output_audio_file>.mp3
 ```
 
 ### Convert Transcripts to Different Formats

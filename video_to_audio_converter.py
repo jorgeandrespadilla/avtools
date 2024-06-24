@@ -9,7 +9,7 @@ from audio_transcriber.converter import convert_video_to_audio
 def main():
     parser = argparse.ArgumentParser(description="Convert video to audio.")
     parser.add_argument(
-        "input_file",
+        "-i", "--input_file",
         help="Input video file path"
     )
     parser.add_argument(
@@ -34,6 +34,7 @@ def main():
                 "[yellow]Converting video to audio...", total=None)
             convert_video_to_audio(
                 args.input_file, args.output_file, args.verbose)
+        rprint("[bold green]Video converted to audio successfully[/bold green]")
     except Exception as e:
         rprint(f"[bold red]Error:[/bold red] {e}")
 

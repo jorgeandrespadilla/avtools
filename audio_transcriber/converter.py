@@ -1,55 +1,55 @@
 import subprocess
 
-from audio_transcriber.utils import file_exists
+from audio_transcriber.utils import FilePath, is_supported_extension, list_extensions
 
 SUPPORTED_INPUT_EXTENSIONS = [".mp4", ".mkv", ".avi", ".mov"]
 SUPPORTED_OUTPUT_EXTENSIONS = [".mp3", ".wav"]
 
-def _is_valid_extension(file: str, extensions: list[str]) -> bool:
-    return any(file.endswith(ext) for ext in extensions)
 
-def format_extensions(extensions: list[str]) -> str:
-    return ", ".join(extensions)
-
-
-def convert_video_to_audio(input_file: str, output_file: str, verbose: bool = False) -> None:
+def convert_video_to_audio(input_file_str: str, output_file_str: str, verbose: bool = False):
     """Convert video to audio."""
 
-    if not file_exists(input_file):
-        raise FileNotFoundError(f"The file '{input_file}' does not exist.")
+    input_path = FilePath(input_file_str)
+    output_path = FilePath(output_file_str)
 
-    if not _is_valid_extension(input_file, SUPPORTED_INPUT_EXTENSIONS):
+    if not input_path.file_exists():
+        raise FileNotFoundError(f"File not found: '{input_path.full_path}'")
+    if not is_supported_extension(input_path.extension, SUPPORTED_INPUT_EXTENSIONS):
         raise ValueError(
-            f"Invalid input file extension. Supported extensions are: {format_extensions(SUPPORTED_INPUT_EXTENSIONS)}"
+            f"Invalid input file format: '{input_path.extension_without_dot.upper()}'. Supported formats: {list_extensions(SUPPORTED_INPUT_EXTENSIONS)}"
+        )
+    if not output_path.directory_exists():
+        raise FileNotFoundError(f"Directory not found: '{output_path.directory_path}'")
+    if not is_supported_extension(output_path.extension, SUPPORTED_OUTPUT_EXTENSIONS):
+        raise ValueError(
+            f"Invalid output file format: '{output_path.extension_without_dot.upper()}'. Supported formats: {list_extensions(SUPPORTED_OUTPUT_EXTENSIONS)}"
         )
 
-    if not _is_valid_extension(output_file, SUPPORTED_OUTPUT_EXTENSIONS):
-        raise ValueError(
-            f"Invalid output file extension. Supported extensions are: {format_extensions(SUPPORTED_OUTPUT_EXTENSIONS)}"
-        )
-    
     # Check if ffmpeg is installed
     try:
         subprocess.run(["ffmpeg", "-version"], capture_output=True)
     except FileNotFoundError:
-        raise FileNotFoundError("ffmpeg is not installed. Please install ffmpeg before running this script.")
+        raise FileNotFoundError(
+            "ffmpeg is not installed. Please install ffmpeg before running this script.")
 
     # -vn: no video
     # -ac: audio channels
     output = subprocess.run([
         "ffmpeg",
-        "-i", input_file,
+        "-i", input_path.full_path,
         "-vn",
-        "-ar", "44100",  # Audio rate
-        "-ab", "128k",  # Audio bitrate
-        "-ac", "1",
+        "-ar", "44100",
+        "-ab", "128k",
+        "-ac", "1", # Audio channels
         # Overwrite output file without asking for confirmation (if it exists)
         "-y",
-        output_file
+        output_path.full_path
     ], capture_output=True)
 
     if verbose:
         print(output.stdout.decode("utf-8") or output.stderr.decode("utf-8"))
 
     if output.returncode != 0:
-        raise Exception("Error converting video to audio. Enable verbose mode for more information.")
+        raise Exception(
+            "Error converting video to audio. Enable verbose mode for more information."
+        )
