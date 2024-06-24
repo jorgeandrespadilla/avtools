@@ -19,7 +19,7 @@ pydantic = "^2.7.4"
 rich = "^13.7.1"
 python-dotenv = "^1.0.1"
 pyannote-audio = "^3.3.1"
-
+ruff = "^0.4.10"
 
 [[tool.poetry.source]]
 name = "pytorch-cuda"
@@ -29,3 +29,6 @@ priority = "supplemental"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 100
