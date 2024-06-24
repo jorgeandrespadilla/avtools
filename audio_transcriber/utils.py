@@ -25,11 +25,31 @@ def is_supported_extension(extension: str, supported_extensions: list[str]) -> b
 
 def list_extensions(extensions: list[str], separator: str = ", ") -> str:
     """Return a string with the list of supported extensions (without the dot and in uppercase)."""
+
     def normalize(ext):
         # Remove the dot if it exists and convert to uppercase
         normalized_ext = ext[1:] if ext.startswith(".") else ext
         return normalized_ext.upper()
+
     return separator.join(map(normalize, extensions))
+
+
+def flatten_list(list_: list) -> list:
+    """
+    Flatten a list of iterables (eg. lists, tuples, etc.) into a single list.
+    
+    Remarks:
+    - Non-iterable elements are not flattened.
+    - This function is not recursive (only flattens the first level, not nested lists).
+    """
+    return [
+        item
+        for sublist in list_
+        for item in
+        (  # Only flatten the element if it is an iterable
+            sublist if isinstance(sublist, (list, tuple)) else [sublist]
+        )
+    ]
 
 
 class FilePath:
@@ -39,7 +59,7 @@ class FilePath:
     Notes:
         - This class is a wrapper around the pathlib.Path class.
         - The provided path is resolved to an absolute path.
-        - For directory paths or other path manipulations, use the pathlib.Path class directly 
+        - For directory paths or other path manipulations, use the pathlib.Path class directly
         (eg. Path('path/to/dir') / 'file.txt').
     """
 
@@ -48,7 +68,7 @@ class FilePath:
     def __init__(self, path: Path | str):
         self.__full_path = Path(path).resolve()
 
-# region Properties
+    # region Properties
 
     @property
     def full_path(self) -> Path:
@@ -80,11 +100,9 @@ class FilePath:
         """Get the file extension without the dot."""
         return self.__full_path.suffix[1:]
 
-# endregion
+    # endregion
 
-
-# region Validation Methods
-
+    # region Validation Methods
 
     def file_exists(self) -> bool:
         """Check if the file exists."""
@@ -95,17 +113,15 @@ class FilePath:
         directory_path = Path(self.directory_path)
         return directory_path.exists() and directory_path.is_dir()
 
-# endregion
+    # endregion
 
+    # region Path Manipulation Methods
 
-# region Path Manipulation Methods
-
-
-    def with_full_name(self, name: str) -> 'FilePath':
+    def with_full_name(self, name: str) -> "FilePath":
         """Return a new FilePath with the provided full name (including the extension)."""
         return FilePath(self.__full_path.with_name(name))
 
-    def with_base_name(self, name: str) -> 'FilePath':
+    def with_base_name(self, name: str) -> "FilePath":
         """Return a new FilePath with the provided base name (without the extension)."""
         return FilePath(self.__full_path.with_stem(name))
 
@@ -113,7 +129,7 @@ class FilePath:
         """Return a new FilePath with the provided extension."""
         return str(self.__full_path.with_suffix(extension))
 
-# endregion
+    # endregion
 
     def __str__(self) -> str:
         return str(self.full_path)
