@@ -32,10 +32,6 @@ def list_extensions(extensions: list[str], separator: str = ", ") -> str:
     return separator.join(map(normalize, extensions))
 
 
-def file_exists(file_path: str) -> bool:
-    return os.path.exists(file_path) and os.path.isfile(file_path)
-
-
 class FilePath:
     """
     Class to easily handle file paths (path elements, validation and manipulation).
