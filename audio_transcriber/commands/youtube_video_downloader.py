@@ -17,9 +17,20 @@ SUPPORTED_OUTPUT_EXTENSIONS = [".mp4"]
 SUPPORTED_RESOLUTIONS = ["360p", "480p", "720p", "1080p", "1440p"]
 
 
-def list_resolutions(separator: str = ", ") -> str:
+
+def _sort_resolutions(resolutions: list[str]) -> list[str]:
+    """Sort the resolutions by quality (ascending order)."""
+    return sorted(resolutions, key=lambda x: int(x[:-1]))
+
+
+def _list_resolutions(resolutions: list[str], separator: str = ", ") -> str:
+    """Return a string with the list of resolutions (sorted by quality)."""
+    return separator.join(_sort_resolutions(resolutions))
+
+
+def list_supported_resolutions() -> str:
     """Return a string with the list of supported resolutions."""
-    return separator.join(SUPPORTED_RESOLUTIONS)
+    return _list_resolutions(SUPPORTED_RESOLUTIONS)
 
 
 class CommandParams(BaseModel):
@@ -52,7 +63,12 @@ class CommandParams(BaseModel):
             raise FileNotFoundError(
                 f"Directory not found: '{self.output_file_path.directory_path}'"
             )
-
+        
+        if self.target_resolution not in SUPPORTED_RESOLUTIONS:
+            raise ValueError(
+                f"Invalid target resolution: '{self.target_resolution}'. Supported resolutions: {list_supported_resolutions()}"
+            )
+        
         return self
 
 
@@ -73,6 +89,12 @@ def _check_availability(yt: YouTube) -> None:
         raise Exception("The provided video is unavailable.") from e
     except Exception as e:
         raise Exception("An error occurred while checking the video availability.") from e
+
+
+def _get_available_resolutions(yt: YouTube) -> list[str]:
+    video_streams = yt.streams.filter(only_video=True)
+    available_resolutions = list(set([stream.resolution for stream in video_streams]))
+    return _sort_resolutions(available_resolutions)
 
 
 def execute(params: CommandParams) -> None:
@@ -130,19 +152,23 @@ def execute(params: CommandParams) -> None:
             4.2 If the audio file path is not None, merge the video and audio files using ffmpeg (save to the desired output file path). [END OF PROCESS]
         """
 
-        video = yt.streams.filter(file_extension="mp4", res=params.target_resolution).first()
-
-        if video is None:
+        streams = yt.streams.filter(file_extension="mp4")
+        if not streams:
+            raise ValueError("No MP4 video stream found.")
+        
+        video_stream = streams.filter(res=params.target_resolution).first()
+        if video_stream is None:
+            available_resolutions = _get_available_resolutions(yt)
             raise ValueError(
-                f"No MP4 video stream found with resolution '{params.target_resolution}'."
+                f"No MP4 video stream found with resolution '{params.target_resolution}'. Available resolutions: {_list_resolutions(available_resolutions)}"
             )
 
         printr(f"[bold]Title:[/bold] '{yt.title}'")
 
         # Update the total size for the progress bar based on the video file size
-        progress.update(download_task, total=video.filesize)
+        progress.update(download_task, total=video_stream.filesize)
 
-        video.download(
+        video_stream.download(
             str(params.output_file_path.directory_path),
             filename=params.output_file_path.full_name,
             skip_existing=False # Do not skip the download if the file already exists

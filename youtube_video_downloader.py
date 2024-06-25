@@ -23,7 +23,7 @@ def _parse_args():
         "-r", "--resolution",
         default="1080p",
         type=str,
-        help=f"Target resolution for the downloaded video. Supported resolutions: {youtube_video_downloader.list_resolutions()}"
+        help=f"Target resolution for the downloaded video. Supported resolutions: {youtube_video_downloader.list_supported_resolutions()}"
     )
     return parser.parse_args()
 
