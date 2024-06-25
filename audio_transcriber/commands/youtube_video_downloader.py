@@ -13,6 +13,7 @@ from typing_extensions import Self
 
 from audio_transcriber.utils import FilePath, is_supported_extension, is_url, list_extensions
 
+YOUTUBE_FILE_EXTENSION = "mp4"
 SUPPORTED_OUTPUT_EXTENSIONS = [".mp4"]
 SUPPORTED_RESOLUTIONS = ["360p", "480p", "720p", "1080p", "1440p"]
 
@@ -92,13 +93,18 @@ def _check_availability(yt: YouTube) -> None:
 
 
 def _get_available_resolutions(yt: YouTube) -> list[str]:
-    video_streams = yt.streams.filter(only_video=True)
+    video_streams = yt.streams.filter(file_extension=YOUTUBE_FILE_EXTENSION, type="video")
     available_resolutions = list(set([stream.resolution for stream in video_streams]))
     return _sort_resolutions(available_resolutions)
 
 
 def execute(params: CommandParams) -> None:
-    """Download a YouTube video."""
+    """
+    Download a YouTube video.
+
+    Remarks:
+    - The video is downloaded with the highest audio quality available.
+    """
 
     with Progress(
         SpinnerColumn(),
@@ -152,7 +158,7 @@ def execute(params: CommandParams) -> None:
             4.2 If the audio file path is not None, merge the video and audio files using ffmpeg (save to the desired output file path). [END OF PROCESS]
         """
 
-        streams = yt.streams.filter(file_extension="mp4")
+        streams = yt.streams.filter(file_extension=YOUTUBE_FILE_EXTENSION)
         if not streams:
             raise ValueError("No MP4 video stream found.")
         
