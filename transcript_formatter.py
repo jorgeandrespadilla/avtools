@@ -31,6 +31,8 @@ def main():
     try:
         format_transcript(args.input_file, args.output_file, args.verbose)
         rprint("[bold green]Transcript formatted successfully[/bold green]")
+    except KeyboardInterrupt:
+        rprint("[bold red]Operation cancelled by the user.[/bold red]")
     except Exception as e:
         rprint(f"[bold red]Error:[/bold red] {e}")
 

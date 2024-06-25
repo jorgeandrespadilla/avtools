@@ -37,6 +37,8 @@ def main():
         )
         video_to_audio_converter.execute(command_params)
         rprint("[bold green]Video converted to audio successfully[/bold green]")
+    except KeyboardInterrupt:
+        rprint("[bold red]Operation cancelled by the user.[/bold red]")
     except Exception as e:
         rprint(f"[bold red]Error:[/bold red] {e}")
 

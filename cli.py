@@ -36,6 +36,8 @@ def main():
         )
 
         rprint(f"[bold green]Transcription saved to '{args.output}'[/bold green]")
+    except KeyboardInterrupt:
+        rprint("[bold red]Operation cancelled by the user.[/bold red]")
     except Exception as e:
         rprint(f"[bold red]Error:[/bold red] {e}")
 
