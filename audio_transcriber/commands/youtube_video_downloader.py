@@ -114,7 +114,8 @@ def execute(params: CommandParams) -> None:
         "",
         TimeElapsedColumn(),
     ) as progress:
-        download_task = progress.add_task("[yellow]Downloading video...", total=1, completed=0)
+        fetch_task = progress.add_task("[yellow]Fetching video...", total=None)
+        download_task = progress.add_task("[yellow]Downloading video...", total=1, completed=0, visible=False)
 
         # Download the video
         def on_progress_callback(stream, _chunk, bytes_remaining):
@@ -168,11 +169,14 @@ def execute(params: CommandParams) -> None:
             raise ValueError(
                 f"No MP4 video stream found with resolution '{params.target_resolution}'. Available resolutions: {_list_resolutions(available_resolutions)}"
             )
+        
+        progress.update(fetch_task, visible=False)
 
         printr(f"[bold]Title:[/bold] '{yt.title}'")
+        printr(f"[bold]Channel:[/bold] '{yt.author}'")
 
         # Update the total size for the progress bar based on the video file size
-        progress.update(download_task, total=video_stream.filesize)
+        progress.update(download_task, total=video_stream.filesize, visible=True)
 
         video_stream.download(
             str(params.output_file_path.directory_path),
