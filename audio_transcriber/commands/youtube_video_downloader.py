@@ -218,16 +218,16 @@ class DownloadCommand:
             # Download the video and audio streams
             if not media_streams.audio:
                 # Download video only and save to the output file path
-                self._register_progress_callbacks(yt, progress, media_streams.video.filesize, "[yellow]Downloading video...")
+                self._register_progress_callbacks(yt, progress, media_streams.video.filesize, "[yellow]Downloading video...", "[green]Video download completed")
                 media_streams.download_video(self.params.output_file_path)
                 return
 
             with tempfile.TemporaryDirectory() as temp_dir:
                 # Download video and audio streams to temporary files
-                self._register_progress_callbacks(yt, progress, media_streams.video.filesize, "[yellow]Downloading video...")
+                self._register_progress_callbacks(yt, progress, media_streams.video.filesize, "[yellow]Downloading video...", "[green]Video download completed")
                 temp_video_path = media_streams.download_video(FilePath(Path(temp_dir) / "video.mp4"))
                 
-                self._register_progress_callbacks(yt, progress, media_streams.audio.filesize, "[yellow]Downloading audio...")
+                self._register_progress_callbacks(yt, progress, media_streams.audio.filesize, "[yellow]Downloading audio...", "[green]Audio download completed")
                 temp_audio_path = media_streams.download_audio(FilePath(Path(temp_dir) / "audio.mp3"))
 
                 # Merge video and audio files
