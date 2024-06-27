@@ -59,5 +59,5 @@ def main():
 
 if __name__ == "__main__":
     # Example Usage:
-    # python cli.py -i video.mp4 -o output.json
+    # python audio_transcriber.py -i video.mp4 -o output.json
     main()

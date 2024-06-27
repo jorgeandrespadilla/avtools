@@ -50,7 +50,7 @@ poetry run python audio_transcriber.py --input <path_to_audio_file> --output <pa
 To transcribe to a text format, use '.txt' as the output file extension.
 
 ```bash
-poetry run python cli.py --input <path_to_audio_file> --output <path_to_output_file>.txt
+poetry run python audio_transcriber.py --input <path_to_audio_file> --output <path_to_output_file>.txt
 ```
 
 ### Convert Video to Audio

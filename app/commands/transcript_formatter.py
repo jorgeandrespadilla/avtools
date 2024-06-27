@@ -1,5 +1,8 @@
 from abc import abstractmethod
 import json
+from typing import Self
+
+from pydantic import BaseModel, ConfigDict, computed_field, model_validator
 
 from app.utils import FilePath, is_supported_extension, list_extensions
 
@@ -79,40 +82,68 @@ TRANSCRIPT_FORMATTERS = {
     ".vtt": VttFormatter,
 }
 
+SUPPORTED_INPUT_EXTENSIONS = [".json"]
 SUPPORTED_OUTPUT_EXTENSIONS = list(TRANSCRIPT_FORMATTERS.keys())
 
 
-def format_transcript(input_path_str: str, output_path_str: str, verbose=False):
+class CommandParams(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    input_file: str
+    """Input transcript file path in JSON format (do not use this field directly, use the input_file_path property instead)."""
+
+    output_file: str
+    """Output file path with the desired format (do not use this field directly, use the output_file_path property instead)."""
+
+    verbose: bool = False
+    """Enable verbose mode."""
+
+    @computed_field
+    @property
+    def input_file_path(self) -> FilePath:
+        return FilePath(self.input_file)
+
+    @computed_field
+    @property
+    def output_file_path(self) -> FilePath:
+        return FilePath(self.output_file)
+
+    @model_validator(mode="after")
+    def _validate_files(self) -> Self:
+        input_path = FilePath(self.input_file)
+        if not input_path.file_exists():
+            raise FileNotFoundError(f"File not found: '{input_path.full_path}'")
+        if not is_supported_extension(input_path.extension, SUPPORTED_INPUT_EXTENSIONS):
+            raise ValueError(
+                f"Invalid input file format: '{input_path.extension_without_dot.upper()}'. Supported formats: {list_extensions(SUPPORTED_INPUT_EXTENSIONS)}"
+            )
+
+        output_path = FilePath(self.output_file)
+        if not output_path.directory_exists():
+            raise FileNotFoundError(f"Directory not found: '{output_path.directory_path}'")
+        if not is_supported_extension(output_path.extension, SUPPORTED_OUTPUT_EXTENSIONS):
+            raise ValueError(
+                f"Invalid output file format: '{output_path.extension_without_dot.upper()}'. Supported formats: {list_extensions(SUPPORTED_OUTPUT_EXTENSIONS)}"
+            )
+        return self
+
+
+def execute(params: CommandParams):
     """Convert transcript in JSON format to a subtitle file or plain text."""
 
-    input_path = FilePath(input_path_str)
-    output_path = FilePath(output_path_str)
-
-    # Validate input and output paths
-    if not input_path.file_exists():
-        raise FileNotFoundError(f"File not found: '{input_path.full_path}'")
-    if not input_path.extension == ".json":
-        raise ValueError("Input file must be a JSON file.")
-    if not output_path.directory_exists():
-        raise FileNotFoundError(f"Directory not found: '{output_path.directory_path}'")
-    if not is_supported_extension(output_path.extension, SUPPORTED_OUTPUT_EXTENSIONS):
-        raise ValueError(
-            f"Invalid output file format: '{output_path.extension_without_dot.upper()}'. Supported formats: {list_extensions(SUPPORTED_OUTPUT_EXTENSIONS)}"
-        )
-
-    with open(input_path.full_path, "r", encoding="utf-8") as file:
+    with open(params.input_file_path.full_path, "r", encoding="utf-8") as file:
         data = json.load(file)
 
-    formatter_class: IFormatter = TRANSCRIPT_FORMATTERS[output_path.extension]
+    formatter_class: IFormatter = TRANSCRIPT_FORMATTERS[params.output_file_path.extension]
 
     string = formatter_class.preamble()
     for index, chunk in enumerate(data["chunks"], 1):
         entry = formatter_class.format_chunk(chunk, index)
 
-        if verbose:
+        if params.verbose:
             print(entry)
 
         string += entry
 
-    with open(output_path.full_path, "w", encoding="utf-8") as file:
+    with open(params.output_file_path.full_path, "w", encoding="utf-8") as file:
         file.write(string)
