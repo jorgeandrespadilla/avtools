@@ -6,7 +6,7 @@ import numpy as np
 from pyannote.audio import Pipeline
 from torchaudio import functional as F
 from transformers.pipelines.audio_utils import ffmpeg_read
-from rich.progress import Progress, TimeElapsedColumn, BarColumn, TextColumn
+from rich.progress import Progress, TimeElapsedColumn, BarColumn, TextColumn, SpinnerColumn
 
 from app.models import DiarizationPipelineParams
 from app.utils import is_url
@@ -166,7 +166,8 @@ def run(config: DiarizationPipelineParams, outputs: Any):
     )
 
     with Progress(
-            TextColumn("🤗 [progress.description]{task.description}"),
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
             BarColumn(style="yellow1", pulse_style="white"),
             TimeElapsedColumn(),
     ) as progress:

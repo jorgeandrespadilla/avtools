@@ -47,7 +47,7 @@ def main():
             input_file,
             output_path,
             language=args.language,
-            # hf_token=hf_token, # TODO: Uncomment this line to use diarization
+            hf_token=hf_token, # Use diarization model
         )
 
         rprint(f"[bold green]Transcription saved to '{args.output}'[/bold green]")
