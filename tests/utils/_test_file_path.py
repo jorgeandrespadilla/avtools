@@ -1,4 +1,4 @@
-from audio_transcriber.utils import FilePath
+from av_toolkit.utils import FilePath
 
 
 try:

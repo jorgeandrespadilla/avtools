@@ -1,9 +1,9 @@
 import argparse
 
 from rich import print as rprint
-from audio_transcriber.args_parser import ArgumentHelpFormatter
-from audio_transcriber.formatter import SUPPORTED_OUTPUT_EXTENSIONS, format_transcript
-from audio_transcriber.utils import list_extensions
+from av_toolkit.args_parser import ArgumentHelpFormatter
+from av_toolkit.formatter import SUPPORTED_OUTPUT_EXTENSIONS, format_transcript
+from av_toolkit.utils import list_extensions
 
 
 def main():

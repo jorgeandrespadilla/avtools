@@ -1,6 +1,6 @@
 import json
-from audio_transcriber.models import DiarizationPipelineParams, TranscriptionPipelineParams
-from audio_transcriber.pipelines import transcription, diarization
+from av_toolkit.models import DiarizationPipelineParams, TranscriptionPipelineParams
+from av_toolkit.pipelines import transcription, diarization
 
 
 def build_result(transcript, outputs):

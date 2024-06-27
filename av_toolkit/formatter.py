@@ -1,7 +1,7 @@
 from abc import abstractmethod
 import json
 
-from audio_transcriber.utils import FilePath, is_supported_extension, list_extensions
+from av_toolkit.utils import FilePath, is_supported_extension, list_extensions
 
 
 class IFormatter:

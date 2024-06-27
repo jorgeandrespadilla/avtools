@@ -1,7 +1,7 @@
 from rich import print as rprint
-from audio_transcriber.args_parser import parse_args
-from audio_transcriber.utils import FilePath, get_env, is_url
-import audio_transcriber.runner as transcriber
+from av_toolkit.args_parser import parse_args
+from av_toolkit.utils import FilePath, get_env, is_url
+import av_toolkit.runner as transcriber
 
 
 def validated_input_file(input_file) -> str:

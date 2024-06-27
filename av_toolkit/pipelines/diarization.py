@@ -8,8 +8,8 @@ from torchaudio import functional as F
 from transformers.pipelines.audio_utils import ffmpeg_read
 from rich.progress import Progress, TimeElapsedColumn, BarColumn, TextColumn
 
-from audio_transcriber.models import DiarizationPipelineParams
-from audio_transcriber.utils import is_url
+from av_toolkit.models import DiarizationPipelineParams
+from av_toolkit.utils import is_url
 
 
 def preprocess_inputs(inputs):

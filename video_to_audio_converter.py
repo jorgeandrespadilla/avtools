@@ -2,7 +2,7 @@ import argparse
 
 from rich import print as rprint
 
-from audio_transcriber.commands import video_to_audio_converter
+from av_toolkit.commands import video_to_audio_converter
 
 
 def _parse_args():

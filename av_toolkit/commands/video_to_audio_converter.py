@@ -4,7 +4,7 @@ from pydantic import BaseModel, ConfigDict, computed_field, model_validator
 from rich.progress import Progress, TimeElapsedColumn, BarColumn, TextColumn
 from typing_extensions import Self
 
-from audio_transcriber.utils import (
+from av_toolkit.utils import (
     FilePath,
     check_ffmpeg_installed,
     flatten_list,

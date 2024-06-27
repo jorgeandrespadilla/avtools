@@ -1,6 +1,6 @@
 import argparse
 
-from audio_transcriber.models import CLIArgs
+from av_toolkit.models import CLIArgs
 
 
 class ArgumentHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):

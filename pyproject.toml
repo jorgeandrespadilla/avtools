@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "audio-transcriber"
+name = "av-tools"
 version = "0.1.0"
-description = ""
+description = "A collection of tools for audio and video processing."
 authors = ["Jorge Andres Padilla <jorgeandres.padillasalgado@gmail.com>"]
 readme = "README.md"
 

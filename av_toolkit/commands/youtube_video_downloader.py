@@ -16,7 +16,7 @@ from rich.progress import (
 )
 from typing_extensions import Self
 
-from audio_transcriber.utils import FilePath, check_ffmpeg_installed, flatten_list, is_supported_extension, is_url, list_extensions
+from av_toolkit.utils import FilePath, check_ffmpeg_installed, flatten_list, is_supported_extension, is_url, list_extensions
 
 SUPPORTED_OUTPUT_EXTENSIONS = [".mp4"]
 SUPPORTED_RESOLUTIONS = ["360p", "480p", "720p", "1080p", "1440p"]
