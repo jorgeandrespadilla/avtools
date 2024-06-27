@@ -292,7 +292,7 @@ class DownloadCommand:
             raise ValueError("Failed to find an adaptive video stream (this should not happen).")
 
         # Find the audio stream with the highest quality
-        audio_stream = yt.streams \
+        audio_stream = streams \
             .filter(only_audio=True) \
             .order_by("abr") \
             .desc() \
