@@ -203,7 +203,11 @@ class DownloadCommand:
             media_streams = self._select_streams(yt)
             if not media_streams.has_audio():
                 printr("No audio stream found. The video will be downloaded without audio.")
-            progress.update(fetch_task, visible=False)
+            progress.update(
+                fetch_task, 
+                description="[green]Video fetched successfully", 
+                visible=self.params.verbose
+            )
 
             # Show video information
             printr(f"[bold]Title:[/bold] '{yt.title}'")
@@ -230,7 +234,11 @@ class DownloadCommand:
                     video_file_path=temp_video_path,
                     audio_file_path=temp_audio_path,
                 )
-                progress.update(merge_task, visible=False)
+                progress.update(
+                    merge_task,
+                    description="[green]Media merged successfully",
+                    visible=self.params.verbose,
+                )
 
     def _fetch_video(self) -> YouTube:
         """	
@@ -280,7 +288,7 @@ class DownloadCommand:
                 f"No MP4 video stream found with resolution '{self.params.target_resolution}'. Available resolutions: {_list_resolutions(available_resolutions)}"
             )
         # Check if only progressive streams are available
-        only_progressive = all([stream.is_progressive for stream in video_streams.all()])
+        only_progressive = all([stream.is_progressive for stream in video_streams])
         if only_progressive: # Video + audio in a single file
             video_stream = video_streams.first()
             if not video_stream:

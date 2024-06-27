@@ -39,7 +39,8 @@ def main():
         command_params = youtube_video_downloader.CommandParams(
             input_url=args.video_url,
             output_file=args.output_file,
-            target_resolution=args.resolution
+            target_resolution=args.resolution,
+            verbose=args.verbose
         )
         youtube_video_downloader.execute(command_params)
         rprint(f"[bold green]Video downloaded to '{command_params.output_file_path}' successfully[/bold green]")
