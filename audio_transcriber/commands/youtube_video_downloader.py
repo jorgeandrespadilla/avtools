@@ -16,7 +16,7 @@ from rich.progress import (
 )
 from typing_extensions import Self
 
-from audio_transcriber.utils import FilePath, flatten_list, is_supported_extension, is_url, list_extensions
+from audio_transcriber.utils import FilePath, check_ffmpeg_installed, flatten_list, is_supported_extension, is_url, list_extensions
 
 SUPPORTED_OUTPUT_EXTENSIONS = [".mp4"]
 SUPPORTED_RESOLUTIONS = ["360p", "480p", "720p", "1080p", "1440p"]
@@ -186,6 +186,9 @@ class DownloadCommand:
         """
         Execute the command.
         """
+
+        check_ffmpeg_installed()
+
         with Progress(
             SpinnerColumn(),
             TextColumn("[progress.description]{task.description}"),
@@ -222,11 +225,12 @@ class DownloadCommand:
                 temp_audio_path = media_streams.download_audio(FilePath(Path(temp_dir) / "audio.mp3"))
 
                 # Merge video and audio files
-                progress.add_task("[yellow]Merging video and audio...", total=None)
+                merge_task = progress.add_task("[yellow]Merging video and audio...", total=None)
                 self._merge_video_and_audio(
                     video_file_path=temp_video_path,
                     audio_file_path=temp_audio_path,
                 )
+                progress.update(merge_task, visible=False)
 
     def _fetch_video(self) -> YouTube:
         """	
