@@ -4,7 +4,13 @@ from pydantic import BaseModel, ConfigDict, computed_field, model_validator
 from rich.progress import Progress, TimeElapsedColumn, BarColumn, TextColumn
 from typing_extensions import Self
 
-from audio_transcriber.utils import FilePath, flatten_list, is_supported_extension, list_extensions
+from audio_transcriber.utils import (
+    FilePath,
+    check_ffmpeg_installed,
+    flatten_list,
+    is_supported_extension,
+    list_extensions,
+)
 
 SUPPORTED_INPUT_EXTENSIONS = [".mp4", ".mkv", ".avi", ".mov"]
 SUPPORTED_OUTPUT_EXTENSIONS = [".mp3", ".wav"]
@@ -18,7 +24,7 @@ class CommandParams(BaseModel):
 
     output_file: str
     """Output audio file path (do not use this field directly, use the output_file_path property instead)."""
-    
+
     verbose: bool = False
     """Enable verbose mode."""
 
@@ -59,16 +65,6 @@ class CommandParams(BaseModel):
         return self
 
 
-def _check_ffmpeg_installed():
-    """Check if ffmpeg is installed."""
-    try:
-        subprocess.run(["ffmpeg", "-version"], capture_output=True)
-    except FileNotFoundError:
-        raise Exception(
-            "ffmpeg is not installed. Please install ffmpeg before running this script."
-        )
-
-
 def _build_ffmpeg_args(params: CommandParams) -> list[str]:
     """Generate the arguments for the ffmpeg command to convert video to audio."""
 
@@ -89,7 +85,7 @@ def _build_ffmpeg_args(params: CommandParams) -> list[str]:
 def execute(params: CommandParams) -> None:
     """Convert video to audio."""
 
-    _check_ffmpeg_installed()
+    check_ffmpeg_installed()
 
     with Progress(
         TextColumn("[progress.description]{task.description}"),

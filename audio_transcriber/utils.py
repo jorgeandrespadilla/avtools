@@ -1,5 +1,6 @@
 from pathlib import Path
 import os
+import subprocess
 import dotenv
 
 
@@ -50,6 +51,16 @@ def flatten_list(list_: list) -> list:
             sublist if isinstance(sublist, (list, tuple)) else [sublist]
         )
     ]
+
+
+def check_ffmpeg_installed():
+    """Check if ffmpeg is installed."""
+    try:
+        subprocess.run(["ffmpeg", "-version"], capture_output=True)
+    except FileNotFoundError:
+        raise Exception(
+            "ffmpeg is not installed. Please install ffmpeg before running this script."
+        )
 
 
 class FilePath:

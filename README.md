@@ -61,6 +61,18 @@ Supported output formats:
 - `txt`
 - `vtt`
 
+### Download YouTube Video
+
+```bash
+poetry run python youtube_video_downloader.py -u <youtube_video_url> -o <path_to_output_file>.mp4
+```
+
+For more information on the available options, run the following command:
+
+```bash
+poetry run python youtube_video_downloader.py --help
+```
+
 ## Additional Information
 
 - https://github.com/python-poetry/poetry/issues/7685
