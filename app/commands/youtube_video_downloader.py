@@ -349,8 +349,8 @@ class DownloadCommand:
             ("-map", "0:v"),  # Video stream from the first input file (video)
             ("-map", "1:a"),  # Audio stream from the second input file (audio)
             ("-c:v", "copy"),  # Copy video codec
-            ("-c:a", "copy"),  # Copy audio codec (use this when input audio is MP4)
-            # ("-c:a", "aac"),  # AAC audio codec (use this when input audio is MP3)
+            ("-c:a", "aac"),  # AAC audio codec
+            ("-filter:a", "loudnorm"), # Normalize the audio volume
             "-y",  # Overwrite output file without asking for confirmation (if it exists)
             str(self.params.output_file_path.full_path),  # Output file
         ])
