@@ -11,7 +11,7 @@ A collection of CLI tools for audio and video processing.
 
 ## Prerequisites
 
-- Python 3.10 & Poetry
+- Python 3.11 & Poetry
 - (Optional, only required for video conversion) [FFmpeg v7 full build](https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-full.7z) and add the bin folder to the PATH environment variable.
 
 ## Description
