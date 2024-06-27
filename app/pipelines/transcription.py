@@ -1,7 +1,7 @@
 import torch
 from transformers import pipeline
 from transformers.utils import is_flash_attn_2_available
-from rich.progress import Progress, TimeElapsedColumn, BarColumn, TextColumn
+from rich.progress import Progress, TimeElapsedColumn, BarColumn, TextColumn, SpinnerColumn
 
 from app.models import TranscriptionPipelineParams
 
@@ -24,7 +24,8 @@ def run(config: TranscriptionPipelineParams):
     }
 
     with Progress(
-        TextColumn("🤗 [progress.description]{task.description}"),
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
         BarColumn(style="yellow1", pulse_style="white"),
         TimeElapsedColumn(),
     ) as progress:

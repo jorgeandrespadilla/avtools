@@ -9,7 +9,7 @@ class TranscriptionPipelineParams(BaseModel):
     device_id: str
     model: str = "openai/whisper-large-v3"
     task: Literal["transcribe", "translate"] = "transcribe"
-    language: str | None = "es"  # Whisper auto-detects language when set to None
+    language: str | None = None  # Whisper auto-detects language when set to None
     batch_size: int = 24  # Reduce if running out of memory
     enable_timestamps: bool = False
 
@@ -30,4 +30,5 @@ class DiarizationPipelineParams(BaseModel):
 class CLIArgs(BaseModel):
     input: str
     output: str
+    language: str | None = None
     hf_token: str | None = None

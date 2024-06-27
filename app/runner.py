@@ -39,6 +39,7 @@ def transcript_to_text(transcript: dict, group_by_speaker: bool = False) -> str:
 def run(
     input_file: str,
     output_file: str,
+    language: str | None = None,
     hf_token: str | None = None,
     device_id: str = "cuda:0", # 'cuda:{#}' or 'mps' for Mac devices
     enable_timestamps: bool = True,
@@ -53,6 +54,7 @@ def run(
         input_file=input_file,
         device_id=device_id,
         enable_timestamps=enable_timestamps,
+        language=language,
     ))
 
     # Diarization

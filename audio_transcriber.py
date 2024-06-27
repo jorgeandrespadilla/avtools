@@ -46,6 +46,7 @@ def main():
         transcriber.run(
             input_file,
             output_path,
+            language=args.language,
             # hf_token=hf_token, # TODO: Uncomment this line to use diarization
         )
 

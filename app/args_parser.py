@@ -51,6 +51,13 @@ parser.add_argument(
     help="Path to save the transcribed text. Path must exist and end with '.txt' for simplified output or '.json' for detailed output. If not provided, the output will be saved in the same directory as the input file (default: 'output.json').",
 )
 parser.add_argument(
+    "--language",
+    required=False,
+    default=None,
+    type=str,
+    help="Provide the language code for the audio file (eg. 'en', 'es'). If not provided, the language will be detected automatically. For a list of supported languages, visit https://github.com/openai/whisper#available-models-and-languages.",
+)
+parser.add_argument(
     "--hf-token",
     required=False,
     default=None,
