@@ -1,4 +1,4 @@
-from av_toolkit.utils import FilePath
+from app.utils import FilePath
 
 
 try:

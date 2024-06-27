@@ -1,9 +1,9 @@
 import argparse
 
 from rich import print as rprint
-from av_toolkit.args_parser import ArgumentHelpFormatter
-from av_toolkit.formatter import SUPPORTED_OUTPUT_EXTENSIONS, format_transcript
-from av_toolkit.utils import list_extensions
+from app.args_parser import ArgumentHelpFormatter
+from app.formatter import SUPPORTED_OUTPUT_EXTENSIONS, format_transcript
+from app.utils import list_extensions
 
 
 def main():

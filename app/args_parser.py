@@ -1,6 +1,6 @@
 import argparse
 
-from av_toolkit.models import CLIArgs
+from app.models import CLIArgs
 
 
 class ArgumentHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):

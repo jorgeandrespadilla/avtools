@@ -1,7 +1,7 @@
 from rich import print as rprint
-from av_toolkit.args_parser import parse_args
-from av_toolkit.utils import FilePath, get_env, is_url
-import av_toolkit.runner as transcriber
+from app.args_parser import parse_args
+from app.utils import FilePath, get_env, is_url
+import app.runner as transcriber
 
 
 def validated_input_file(input_file) -> str:

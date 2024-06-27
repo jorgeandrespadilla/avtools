@@ -1,6 +1,6 @@
 import json
-from av_toolkit.models import DiarizationPipelineParams, TranscriptionPipelineParams
-from av_toolkit.pipelines import transcription, diarization
+from app.models import DiarizationPipelineParams, TranscriptionPipelineParams
+from app.pipelines import transcription, diarization
 
 
 def build_result(transcript, outputs):
