@@ -1,7 +1,10 @@
 from rich import print as rprint
 from av_toolkit.args_parser import parse_args
-from av_toolkit.utils import FilePath, get_env, is_url
+from av_toolkit.utils import FilePath, get_env, is_supported_extension, is_url, list_extensions
 import av_toolkit.runner as transcriber
+
+SUPPORTED_INPUT_EXTENSIONS = [".mp3", ".wav"]
+SUPPORTED_OUTPUT_EXTENSIONS = [".json", ".txt"]
 
 
 def validated_input_file(input_file) -> str:
@@ -11,6 +14,11 @@ def validated_input_file(input_file) -> str:
     input_path = FilePath(input_file)
     if not input_path.file_exists():
         raise FileNotFoundError(f"File not found: '{input_path.full_path}'")
+    if not is_supported_extension(input_path.extension, SUPPORTED_INPUT_EXTENSIONS):
+        raise ValueError(
+            f"Invalid input file format: '{input_path.extension_without_dot.upper()}'. Supported formats: {list_extensions(SUPPORTED_INPUT_EXTENSIONS)}"
+        )
+
     return str(input_path.full_path)
 
 
@@ -18,6 +26,11 @@ def validated_output_path(output_path) -> str:
     output_path = FilePath(output_path)
     if not output_path.directory_exists():
         raise FileNotFoundError(f"Directory not found: '{output_path.directory_path}'")
+    if not is_supported_extension(output_path.extension, SUPPORTED_OUTPUT_EXTENSIONS):
+        raise ValueError(
+            f"Invalid output file format: '{output_path.extension_without_dot.upper()}'. Supported formats: {list_extensions(SUPPORTED_OUTPUT_EXTENSIONS)}"
+        )
+
     return str(output_path.full_path)
 
 
