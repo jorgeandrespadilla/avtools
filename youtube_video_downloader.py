@@ -8,7 +8,7 @@ from audio_transcriber.commands import youtube_video_downloader
 def _parse_args():
     parser = argparse.ArgumentParser(description="Download a YouTube video.")
     parser.add_argument(
-        "-i", "--video_url",
+        "-u", "--video_url",
         required=True,
         type=str,
         help="Input YouTube video URL."
