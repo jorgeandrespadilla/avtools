@@ -1,4 +1,13 @@
-# Audio Transcriber
+# AV Tools
+
+A collection of CLI tools for audio and video processing.
+
+## Features
+
+- Audio transcription and diarization
+- Transcript formatting
+- Video to audio conversion
+- YouTube video downloader
 
 ## Prerequisites
 
