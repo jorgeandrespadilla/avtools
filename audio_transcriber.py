@@ -1,7 +1,8 @@
 from rich import print as rprint
-from av_toolkit.args_parser import parse_args
-from av_toolkit.utils import FilePath, get_env, is_supported_extension, is_url, list_extensions
-import av_toolkit.runner as transcriber
+
+from app.args_parser import parse_args
+from app.utils import FilePath, get_env, is_supported_extension, is_url, list_extensions
+import app.runner as transcriber
 
 SUPPORTED_INPUT_EXTENSIONS = [".mp3", ".wav"]
 SUPPORTED_OUTPUT_EXTENSIONS = [".json", ".txt"]

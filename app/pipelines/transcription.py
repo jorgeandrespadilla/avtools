@@ -3,7 +3,7 @@ from transformers import pipeline
 from transformers.utils import is_flash_attn_2_available
 from rich.progress import Progress, TimeElapsedColumn, BarColumn, TextColumn
 
-from av_toolkit.models import TranscriptionPipelineParams
+from app.models import TranscriptionPipelineParams
 
 
 def run(config: TranscriptionPipelineParams):

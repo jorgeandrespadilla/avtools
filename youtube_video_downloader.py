@@ -2,7 +2,7 @@ import argparse
 
 from rich import print as rprint
 
-from av_toolkit.commands import youtube_video_downloader
+from app.commands import youtube_video_downloader
 
 
 def _parse_args():
