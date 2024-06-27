@@ -1,6 +1,8 @@
 from abc import abstractmethod
 import json
 
+from audio_transcriber.utils import FilePath, is_supported_extension, list_extensions
+
 
 class IFormatter:
     @abstractmethod
@@ -19,7 +21,7 @@ class TxtFormatter(IFormatter):
 
     @classmethod
     def format_chunk(cls, chunk, index):
-        text = chunk['text']
+        text = chunk["text"]
         return f"{text}\n"
 
 
@@ -28,14 +30,12 @@ class SrtFormatter(IFormatter):
     def preamble(cls):
         return ""
 
-
     @classmethod
     def format_chunk(cls, chunk, index):
-        text = chunk['text']
-        start, end = chunk['timestamp'][0], chunk['timestamp'][1]
+        text = chunk["text"]
+        start, end = chunk["timestamp"][0], chunk["timestamp"][1]
         start_format, end_format = cls._format_seconds(start), cls._format_seconds(end)
         return f"{index}\n{start_format} --> {end_format}\n{text}\n\n"
-
 
     @classmethod
     def _format_seconds(cls, seconds):
@@ -56,11 +56,11 @@ class VttFormatter(IFormatter):
 
     @classmethod
     def format_chunk(cls, chunk, index):
-        text = chunk['text']
-        start, end = chunk['timestamp'][0], chunk['timestamp'][1]
+        text = chunk["text"]
+        start, end = chunk["timestamp"][0], chunk["timestamp"][1]
         start_format, end_format = cls._format_seconds(start), cls._format_seconds(end)
         return f"{index}\n{start_format} --> {end_format}\n{text}\n\n"
-    
+
     @classmethod
     def _format_seconds(cls, seconds):
         whole_seconds = int(seconds)
@@ -73,24 +73,40 @@ class VttFormatter(IFormatter):
         return f"{hours:02d}:{minutes:02d}:{seconds:02d}.{milliseconds:03d}"
 
 
-def format_transcript(input_path: str, output_format: str, output_path: str, verbose=False):
-    if not input_path.endswith('.json'):
+TRANSCRIPT_FORMATTERS = {
+    ".srt": SrtFormatter,
+    ".txt": TxtFormatter,
+    ".vtt": VttFormatter,
+}
+
+SUPPORTED_OUTPUT_EXTENSIONS = list(TRANSCRIPT_FORMATTERS.keys())
+
+
+def format_transcript(input_path_str: str, output_path_str: str, verbose=False):
+    """Convert transcript in JSON format to a subtitle file or plain text."""
+
+    input_path = FilePath(input_path_str)
+    output_path = FilePath(output_path_str)
+
+    # Validate input and output paths
+    if not input_path.file_exists():
+        raise FileNotFoundError(f"File not found: '{input_path.full_path}'")
+    if not input_path.extension == ".json":
         raise ValueError("Input file must be a JSON file.")
-    
-    with open(input_path, 'r', encoding="utf-8") as file:
+    if not output_path.directory_exists():
+        raise FileNotFoundError(f"Directory not found: '{output_path.directory_path}'")
+    if not is_supported_extension(output_path.extension, SUPPORTED_OUTPUT_EXTENSIONS):
+        raise ValueError(
+            f"Invalid output file format: '{output_path.extension_without_dot.upper()}'. Supported formats: {list_extensions(SUPPORTED_OUTPUT_EXTENSIONS)}"
+        )
+
+    with open(input_path.full_path, "r", encoding="utf-8") as file:
         data = json.load(file)
 
-    formatters = {
-        'srt': SrtFormatter,
-        'vtt': VttFormatter,
-        'txt': TxtFormatter
-    }
-    if output_format not in formatters:
-        raise ValueError(f"Invalid output format: {output_format}")
-    formatter_class: IFormatter = formatters[output_format]
+    formatter_class: IFormatter = TRANSCRIPT_FORMATTERS[output_path.extension]
 
     string = formatter_class.preamble()
-    for index, chunk in enumerate(data['chunks'], 1):
+    for index, chunk in enumerate(data["chunks"], 1):
         entry = formatter_class.format_chunk(chunk, index)
 
         if verbose:
@@ -98,5 +114,5 @@ def format_transcript(input_path: str, output_format: str, output_path: str, ver
 
         string += entry
 
-    with open(f"{output_path}.{output_format}", 'w', encoding='utf-8') as file:
+    with open(output_path.full_path, "w", encoding="utf-8") as file:
         file.write(string)

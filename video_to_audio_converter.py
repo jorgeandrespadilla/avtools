@@ -1,20 +1,22 @@
 import argparse
 
 from rich import print as rprint
-from rich.progress import Progress, TimeElapsedColumn, BarColumn, TextColumn
 
-from audio_transcriber.converter import convert_video_to_audio
+from audio_transcriber.commands import video_to_audio_converter
 
 
-def main():
+def _parse_args():
     parser = argparse.ArgumentParser(description="Convert video to audio.")
     parser.add_argument(
-        "input_file",
+        "-i", "--input_file",
+        required=True,
+        type=str,
         help="Input video file path"
     )
     parser.add_argument(
         "-o", "--output_file",
         default="output.mp3",
+        type=str,
         help="Output audio file path. If output file exists, it will be overwritten."
     )
     parser.add_argument(
@@ -22,18 +24,21 @@ def main():
         action="store_true",
         help="Print ffmpeg output"
     )
-    args = parser.parse_args()
+    return parser.parse_args()
 
+
+def main():
     try:
-        with Progress(
-                TextColumn("[progress.description]{task.description}"),
-                BarColumn(style="yellow1", pulse_style="white"),
-                TimeElapsedColumn(),
-        ) as progress:
-            progress.add_task(
-                "[yellow]Converting video to audio...", total=None)
-            convert_video_to_audio(
-                args.input_file, args.output_file, args.verbose)
+        args = _parse_args()
+        command_params = video_to_audio_converter.CommandParams(
+            input_file=args.input_file,
+            output_file=args.output_file,
+            verbose=args.verbose
+        )
+        video_to_audio_converter.execute(command_params)
+        rprint("[bold green]Video converted to audio successfully[/bold green]")
+    except KeyboardInterrupt:
+        rprint("[bold red]Operation cancelled by the user.[/bold red]")
     except Exception as e:
         rprint(f"[bold red]Error:[/bold red] {e}")
 

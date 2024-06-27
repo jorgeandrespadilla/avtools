@@ -38,13 +38,13 @@ class ArgumentHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
 
 parser = argparse.ArgumentParser(description="Audio Transcriber")
 parser.add_argument(
-    "--input",
+    "-i", "--input",
     required=True,
     type=str,
     help="Path or URL to the audio file to be transcribed.",
 )
 parser.add_argument(
-    "--output",
+    "-o", "--output",
     required=False,
     default="output.json",
     type=str,
