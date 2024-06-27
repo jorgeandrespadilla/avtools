@@ -344,6 +344,8 @@ class DownloadCommand:
         command_args = flatten_list([
             ("-i", video_file_path),  # Input video file
             ("-i", audio_file_path),  # Input audio file
+            ("-map", "0:v"),  # Video stream from the first input file (video)
+            ("-map", "1:a"),  # Audio stream from the second input file (audio)
             "-c:v", "copy",  # Copy video codec
             "-c:a", "aac",  # AAC audio codec
             "-y",  # Overwrite output file without asking for confirmation (if it exists)
