@@ -37,6 +37,10 @@ This project is an AI powered audio transcriber, which is based on the [insanely
 poetry run python audio_transcriber.py --input <path_to_audio_file> --output <path_to_output_file>
 ```
 
+> To use diarization feature, add the `--hf-token` argument with the access token. We do not recommended to use this feature for large audio files.
+
+```bash
+
 To transcribe to a JSON format, use '.json' as the output file extension (recommended).
 
 ```bash
