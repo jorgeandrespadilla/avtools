@@ -228,7 +228,7 @@ class DownloadCommand:
                 temp_video_path = media_streams.download_video(FilePath(Path(temp_dir) / "video.mp4"))
                 
                 self._register_progress_callbacks(yt, progress, media_streams.audio.filesize, "[yellow]Downloading audio...", "[green]Audio download completed")
-                temp_audio_path = media_streams.download_audio(FilePath(Path(temp_dir) / "audio.mp3"))
+                temp_audio_path = media_streams.download_audio(FilePath(Path(temp_dir) / "audio.mp4"))
 
                 # Merge video and audio files
                 merge_task = progress.add_task("[yellow]Merging video and audio...", total=None)
@@ -348,8 +348,9 @@ class DownloadCommand:
             ("-i", audio_file_path),  # Input audio file
             ("-map", "0:v"),  # Video stream from the first input file (video)
             ("-map", "1:a"),  # Audio stream from the second input file (audio)
-            "-c:v", "copy",  # Copy video codec
-            "-c:a", "aac",  # AAC audio codec
+            ("-c:v", "copy"),  # Copy video codec
+            ("-c:a", "copy"),  # Copy audio codec (use this when input audio is MP4)
+            # ("-c:a", "aac"),  # AAC audio codec (use this when input audio is MP3)
             "-y",  # Overwrite output file without asking for confirmation (if it exists)
             str(self.params.output_file_path.full_path),  # Output file
         ])
