@@ -206,6 +206,8 @@ class DownloadCommand:
             progress.update(
                 fetch_task, 
                 description="[green]Video fetched successfully", 
+                completed=1,
+                total=1,
                 visible=self.params.verbose
             )
 
@@ -354,7 +356,7 @@ class DownloadCommand:
         output = subprocess.run(["ffmpeg", *command_args], capture_output=True)
 
         if self.params.verbose:
-            print(output.stdout.decode("utf-8") or output.stderr.decode("utf-8"))
+            printr(output.stdout.decode("utf-8") or output.stderr.decode("utf-8"))
         if output.returncode != 0:
             raise Exception(
                 "An error occurred while merging the video and audio files. Please enable verbose mode to check the ffmpeg output for more details."
