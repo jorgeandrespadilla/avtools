@@ -25,6 +25,11 @@ def _parse_args():
         type=str,
         help=f"Target resolution for the downloaded video. Supported resolutions: {youtube_video_downloader.list_supported_resolutions()}"
     )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Print ffmpeg output (for debugging purposes)"
+    )
     return parser.parse_args()
 
 
