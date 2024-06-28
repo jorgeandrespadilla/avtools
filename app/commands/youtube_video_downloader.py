@@ -5,7 +5,7 @@ import tempfile
 from typing import Literal
 from pydantic import BaseModel, ConfigDict, computed_field, model_validator
 from pytube import YouTube, StreamQuery, Stream, exceptions
-from rich import print as printr
+from rich import print as printr, prompt
 from rich.progress import (
     Progress,
     TimeElapsedColumn,
@@ -18,7 +18,7 @@ from rich.progress import (
 from typing_extensions import Self
 from youtube_transcript_api import YouTubeTranscriptApi, NoTranscriptFound
 
-from app.utils import FilePath, check_ffmpeg_installed, flatten_list, is_supported_extension, is_url, list_extensions
+from app.utils import FilePath, PauseRichProgress, check_ffmpeg_installed, flatten_list, is_supported_extension, is_url, list_extensions
 
 SUPPORTED_OUTPUT_EXTENSIONS = [".mp4"]
 SUPPORTED_RESOLUTIONS = ["360p", "480p", "720p", "1080p", "1440p"]
@@ -261,14 +261,8 @@ class DownloadCommand:
                 )
             
             # Download the transcript file
-            fetch_task = progress.add_task("[yellow]Downloading transcript...", total=None)
-            self._download_transcript(yt)
-            progress.update(
-                fetch_task, 
-                description="[green]Transcript download completed",
-                completed=1,
-                total=1
-            )
+            self._execute_download_transcript(yt, progress)
+
 
     def _fetch_video(self) -> YouTube:
         """	
@@ -368,6 +362,25 @@ class DownloadCommand:
 
         return task
     
+    def _execute_download_transcript(self, yt: YouTube, progress: Progress) -> None:
+        """Execute download of the transcript file with the video subtitles."""
+        if not self.params.include_transcript:
+            return
+        if self.params.transcript_file_path.file_exists():
+            with PauseRichProgress(progress):
+                replace_transcript = prompt.Confirm.ask(f"Transcript file already exists: '{self.params.transcript_file_path}'.\nDo you want to replace it?", default=True)
+            if not replace_transcript:
+                return
+        
+        fetch_task = progress.add_task("[yellow]Downloading transcript...", total=None)
+        self._download_transcript(yt)
+        progress.update(
+            fetch_task, 
+            description="[green]Transcript download completed",
+            completed=1,
+            total=1
+        )
+
     def _download_transcript(self, yt: YouTube) -> None:
         """Download the transcript file with the video subtitles."""
         if not self.params.transcript:
