@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 import subprocess
 import tempfile
@@ -15,6 +16,7 @@ from rich.progress import (
     TaskID
 )
 from typing_extensions import Self
+from youtube_transcript_api import YouTubeTranscriptApi, NoTranscriptFound
 
 from app.utils import FilePath, check_ffmpeg_installed, flatten_list, is_supported_extension, is_url, list_extensions
 
@@ -34,6 +36,9 @@ class CommandParams(BaseModel):
     target_resolution: str = "1080p"
     """Target resolution for the downloaded video."""
 
+    transcript: str | None = None
+    """Include transcript file in the output folder (same name as the video file, but in JSON format) with the specified language code (eg. 'en')."""
+
     verbose: bool = False
     """Enable verbose mode."""
 
@@ -41,6 +46,19 @@ class CommandParams(BaseModel):
     @property
     def output_file_path(self) -> FilePath:
         return FilePath(self.output_file)
+    
+    @computed_field
+    @property
+    def include_transcript(self) -> bool:
+        return self.transcript is not None
+
+    @computed_field
+    @property
+    def transcript_file_path(self) -> FilePath:
+        """Transcript file path."""
+        if not self.include_transcript:
+            raise ValueError("Transcript file path is not available because 'include_transcript' is False.")
+        return self.output_file_path.with_extension(".json")
 
     @model_validator(mode="after")
     def _validate_fields(self) -> Self:
@@ -60,6 +78,9 @@ class CommandParams(BaseModel):
             raise ValueError(
                 f"Invalid target resolution: '{self.target_resolution}'. Supported resolutions: {list_supported_resolutions()}"
             )
+        
+        if self.include_transcript and self.transcript_file_path.file_exists():
+            raise FileExistsError(f"Transcript file already exists: '{self.transcript_file_path}'")
 
         return self
 
@@ -241,6 +262,17 @@ class DownloadCommand:
                     description="[green]Media merged successfully",
                     visible=self.params.verbose,
                 )
+            
+            # Download the transcript file
+            fetch_task = progress.add_task("[yellow]Downloading transcript...", total=None)
+            self._download_transcript(yt)
+            progress.update(
+                fetch_task, 
+                description="[green]Transcript downloaded successfully",
+                completed=1,
+                total=1,
+                visible=self.params.verbose
+            )
 
     def _fetch_video(self) -> YouTube:
         """	
@@ -339,6 +371,58 @@ class DownloadCommand:
         yt.register_on_complete_callback(on_complete_callback)
 
         return task
+    
+    def _download_transcript(self, yt: YouTube) -> None:
+        """Download the transcript file with the video subtitles."""
+        if not self.params.transcript:
+            return
+        
+        available_transcripts = YouTubeTranscriptApi.list_transcripts(yt.video_id)
+        if not available_transcripts:
+            raise Exception("No transcript found for the video.")
+        
+        available_language_codes = [
+            str(transcript.language_code).lower()
+            for transcript in available_transcripts
+        ]
+        if self.params.transcript.lower() not in available_language_codes:
+            raise ValueError(
+                f"Transcript not found for the video with language code '{self.params.transcript}'. Available language codes: {', '.join(available_language_codes)}."
+            )
+        
+        try:
+            raw_transcript = YouTubeTranscriptApi.get_transcript(
+                yt.video_id,
+                languages=(self.params.transcript,)
+            )
+        except NoTranscriptFound:
+            raise Exception("No transcript found for the video with language code '{self.params.transcript}'. Please try another language code.")
+
+        formatted_transcript = self._format_raw_transcript(raw_transcript)
+        with open(self.params.transcript_file_path.full_path, "w", encoding="utf8") as file:
+            json.dump(formatted_transcript, file, ensure_ascii=False)
+
+    def _format_raw_transcript(self, raw_transcript: list[dict]) -> dict:
+        """
+        Format the raw transcript data to standard format.
+        """
+        text = ""
+        chunks = []
+        for item in raw_transcript:
+            if "text" not in item:
+                continue
+            start = item["start"]
+            end = start + item["duration"]
+            text += " " + item["text"]
+            chunks.append({
+                "timestamp": [start, end],
+                "text": item["text"],
+            })
+        return {
+            "speakers": [],
+            "chunks": chunks,
+            "text": text.strip(),
+        }
 
     def _merge_video_and_audio(self, video_file_path: str, audio_file_path: str):
         """Merge the video and audio files using ffmpeg."""

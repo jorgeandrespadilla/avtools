@@ -26,6 +26,12 @@ def _parse_args():
         help=f"Target resolution for the downloaded video. Supported resolutions: {youtube_video_downloader.list_supported_resolutions()}"
     )
     parser.add_argument(
+        "--transcript",
+        default=None,
+        type=str,
+        help="Include transcript file in the output folder (same name as the video file, but in JSON format) with the specified language code (eg. 'en')."
+    )
+    parser.add_argument(
         "--verbose",
         action="store_true",
         help="Print ffmpeg output (for debugging purposes)"
@@ -40,6 +46,7 @@ def main():
             input_url=args.video_url,
             output_file=args.output_file,
             target_resolution=args.resolution,
+            transcript=args.transcript,
             verbose=args.verbose
         )
         youtube_video_downloader.execute(command_params)

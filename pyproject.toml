@@ -23,6 +23,7 @@ pyannote-audio = "^3.3.1"
 ruff = "^0.4.10"
 pytube = "^15.0.0"
 numpy = "^1.26.4"
+youtube-transcript-api = "^0.6.2"
 
 [[tool.poetry.source]]
 name = "pytorch-cuda"

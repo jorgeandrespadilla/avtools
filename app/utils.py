@@ -136,9 +136,9 @@ class FilePath:
         """Return a new FilePath with the provided base name (without the extension)."""
         return FilePath(self.__full_path.with_stem(name))
 
-    def with_extension(self, extension: str) -> str:
+    def with_extension(self, extension: str) -> "FilePath":
         """Return a new FilePath with the provided extension."""
-        return str(self.__full_path.with_suffix(extension))
+        return FilePath(self.__full_path.with_suffix(extension))
 
     # endregion
 
