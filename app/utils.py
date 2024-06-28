@@ -2,6 +2,7 @@ from pathlib import Path
 import os
 import subprocess
 import dotenv
+from rich.progress import Progress
 
 
 def get_env(key: str, default: str | None = None) -> str | None:
@@ -144,3 +145,26 @@ class FilePath:
 
     def __str__(self) -> str:
         return str(self.full_path)
+
+
+class PauseRichProgress:
+    """
+    Context manager to pause the progress bar and clear the terminal line.
+    """
+
+    def __init__(self, progress: Progress) -> None:
+        self._progress = progress
+
+    def _clear_line(self) -> None:
+        UP = "\x1b[1A"
+        CLEAR = "\x1b[2K"
+        for _ in self._progress.tasks:
+            print(UP + CLEAR + UP)
+
+    def __enter__(self):
+        self._progress.stop()
+        self._clear_line()
+        return self._progress
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        self._progress.start()
