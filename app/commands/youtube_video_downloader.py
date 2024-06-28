@@ -79,9 +79,6 @@ class CommandParams(BaseModel):
                 f"Invalid target resolution: '{self.target_resolution}'. Supported resolutions: {list_supported_resolutions()}"
             )
         
-        if self.include_transcript and self.transcript_file_path.file_exists():
-            raise FileExistsError(f"Transcript file already exists: '{self.transcript_file_path}'")
-
         return self
 
 
@@ -268,10 +265,9 @@ class DownloadCommand:
             self._download_transcript(yt)
             progress.update(
                 fetch_task, 
-                description="[green]Transcript downloaded successfully",
+                description="[green]Transcript download completed",
                 completed=1,
-                total=1,
-                visible=self.params.verbose
+                total=1
             )
 
     def _fetch_video(self) -> YouTube:
