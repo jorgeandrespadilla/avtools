@@ -80,6 +80,12 @@ Supported output formats:
 poetry run python youtube_video_downloader.py -u <youtube_video_url> -o <path_to_output_file>.mp4
 ```
 
+To download the video transcript, add the `--transcript` argument with the language code (e.g. `en` for English).
+
+```bash
+poetry run python youtube_video_downloader.py -u <youtube_video_url> -o <path_to_output_file>.mp4 --transcript=<language_code>
+```
+
 For more information on the available options, run the following command:
 
 ```bash
