@@ -39,6 +39,9 @@ class CommandParams(BaseModel):
     transcript: str | None = None
     """Include transcript file in the output folder (same name as the video file, but in JSON format) with the specified language code (eg. 'en')."""
 
+    confirm: bool = False
+    """Confirm all prompts automatically (useful for automation)."""
+
     verbose: bool = False
     """Enable verbose mode."""
 
@@ -366,7 +369,7 @@ class DownloadCommand:
         """Execute download of the transcript file with the video subtitles."""
         if not self.params.include_transcript:
             return
-        if self.params.transcript_file_path.file_exists():
+        if self.params.transcript_file_path.file_exists() and not self.params.confirm:
             with PauseRichProgress(progress):
                 replace_transcript = prompt.Confirm.ask(f"Transcript file already exists: '{self.params.transcript_file_path}'.\nDo you want to replace it?", default=True)
             if not replace_transcript:

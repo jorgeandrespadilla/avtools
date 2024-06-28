@@ -32,6 +32,11 @@ def _parse_args():
         help="Include transcript file in the output folder (same name as the video file, but in JSON format) with the specified language code (eg. 'en')."
     )
     parser.add_argument(
+        "-y", "--confirm",
+        action="store_true",
+        help="Confirm all prompts automatically (useful for automation)."
+    )
+    parser.add_argument(
         "--verbose",
         action="store_true",
         help="Print ffmpeg output (for debugging purposes)"
@@ -47,6 +52,7 @@ def main():
             output_file=args.output_file,
             target_resolution=args.resolution,
             transcript=args.transcript,
+            confirm=args.confirm,
             verbose=args.verbose
         )
         youtube_video_downloader.execute(command_params)
