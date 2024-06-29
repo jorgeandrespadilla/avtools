@@ -1,9 +1,8 @@
 import argparse
 
 from rich import print as rprint
-from app.args_parser import ArgumentHelpFormatter
 from app.commands import transcript_formatter
-from app.utils import handle_errors, list_extensions
+from app.utils import ArgumentHelpFormatter, handle_errors, list_extensions
 
 
 def _parse_args():
