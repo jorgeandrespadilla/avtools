@@ -6,14 +6,12 @@ from app.utils import (
     ArgumentHelpFormatter,
     FilePath,
     get_env,
+    handle_errors,
     is_supported_extension,
     is_url,
     list_extensions,
 )
-import app.commands.audio_transcriber as transcriber
-
-SUPPORTED_INPUT_EXTENSIONS = [".mp3", ".wav"]
-SUPPORTED_OUTPUT_EXTENSIONS = [".json", ".txt"]
+from app.commands import audio_transcriber
 
 
 def _parse_args():
@@ -66,9 +64,11 @@ def validated_input_file(input_file) -> str:
     input_path = FilePath(input_file)
     if not input_path.file_exists():
         raise FileNotFoundError(f"File not found: '{input_path.full_path}'")
-    if not is_supported_extension(input_path.extension, SUPPORTED_INPUT_EXTENSIONS):
+    if not is_supported_extension(
+        input_path.extension, audio_transcriber.SUPPORTED_INPUT_EXTENSIONS
+    ):
         raise ValueError(
-            f"Invalid input file format: '{input_path.extension_without_dot.upper()}'. Supported formats: {list_extensions(SUPPORTED_INPUT_EXTENSIONS)}"
+            f"Invalid input file format: '{input_path.extension_without_dot.upper()}'. Supported formats: {list_extensions(audio_transcriber.SUPPORTED_INPUT_EXTENSIONS)}"
         )
 
     return str(input_path.full_path)
@@ -78,35 +78,33 @@ def validated_output_path(output_path) -> str:
     output_path = FilePath(output_path)
     if not output_path.directory_exists():
         raise FileNotFoundError(f"Directory not found: '{output_path.directory_path}'")
-    if not is_supported_extension(output_path.extension, SUPPORTED_OUTPUT_EXTENSIONS):
+    if not is_supported_extension(
+        output_path.extension, audio_transcriber.SUPPORTED_OUTPUT_EXTENSIONS
+    ):
         raise ValueError(
-            f"Invalid output file format: '{output_path.extension_without_dot.upper()}'. Supported formats: {list_extensions(SUPPORTED_OUTPUT_EXTENSIONS)}"
+            f"Invalid output file format: '{output_path.extension_without_dot.upper()}'. Supported formats: {list_extensions(audio_transcriber.SUPPORTED_OUTPUT_EXTENSIONS)}"
         )
 
     return str(output_path.full_path)
 
 
+@handle_errors
 def main():
     args = _parse_args()
     args = CLIArgs(**args.__dict__)
     hf_token = args.hf_token or get_env("HUGGING_FACE_TOKEN")
 
-    try:
-        input_file = validated_input_file(args.input)
-        output_path = validated_output_path(args.output)
+    input_file = validated_input_file(args.input)
+    output_path = validated_output_path(args.output)
 
-        transcriber.run(
-            input_file,
-            output_path,
-            language=args.language,
-            hf_token=hf_token,  # Use diarization model
-        )
+    audio_transcriber.execute(
+        input_file,
+        output_path,
+        language=args.language,
+        hf_token=hf_token,  # Use diarization model
+    )
 
-        rprint(f"[bold green]Transcription saved to '{args.output}'[/bold green]")
-    except KeyboardInterrupt:
-        rprint("[bold red]Operation cancelled by the user.[/bold red]")
-    except Exception as e:
-        rprint(f"[bold red]Error:[/bold red] {e}")
+    rprint(f"[bold green]Transcription saved to '{args.output}'[/bold green]")
 
 
 if __name__ == "__main__":
