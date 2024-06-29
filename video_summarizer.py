@@ -3,6 +3,7 @@ import argparse
 from rich import print as rprint
 
 from app.commands import video_summarizer
+from app.utils import handle_errors
 
 
 def _parse_args():
@@ -32,21 +33,17 @@ def _parse_args():
     return parser.parse_args()
 
 
+@handle_errors
 def main():
-    try:
-        args = _parse_args()
-        command_params = video_summarizer.CommandParams(
-            input_video_file=args.input_video,
-            input_transcript_file=args.transcript,
-            output_dir=args.output_dir,
-            verbose=args.verbose
-        )
-        video_summarizer.execute(command_params)
-        rprint(f"[bold green]Video summary saved to '{command_params.output_dir}'[/bold green]")
-    except KeyboardInterrupt:
-        rprint("[bold red]Operation cancelled by the user.[/bold red]")
-    except Exception as e:
-        rprint(f"[bold red]Error:[/bold red] {e}")
+    args = _parse_args()
+    command_params = video_summarizer.CommandParams(
+        input_video_file=args.input_video,
+        input_transcript_file=args.transcript,
+        output_dir=args.output_dir,
+        verbose=args.verbose
+    )
+    video_summarizer.execute(command_params)
+    rprint(f"[bold green]Video summary saved to '{command_params.output_dir}'[/bold green]")
 
 
 if __name__ == "__main__":
