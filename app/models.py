@@ -25,10 +25,3 @@ class DiarizationPipelineParams(BaseModel):
 
 
 # endregion
-
-
-class CLIArgs(BaseModel):
-    input: str
-    output: str
-    language: str | None = None
-    hf_token: str | None = None
