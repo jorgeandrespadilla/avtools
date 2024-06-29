@@ -1,12 +1,15 @@
 import json
 from typing import Self
 
-from pydantic import BaseModel, ConfigDict, computed_field, model_validator
+from pydantic import BaseModel, ConfigDict, computed_field, field_validator, model_validator
 from app.pipelines import transcription, diarization
 from app.utils import FilePath, format_duration, is_supported_extension, is_url, list_extensions
 
 SUPPORTED_INPUT_EXTENSIONS = [".mp3", ".wav"]
 SUPPORTED_OUTPUT_EXTENSIONS = [".json", ".txt"]
+
+
+# region Parameters
 
 
 class CommandParams(BaseModel):
@@ -90,6 +93,9 @@ class CommandParams(BaseModel):
             )
 
 
+# endregion
+
+
 # region Data Models
 
 
@@ -114,6 +120,13 @@ class TranscriptionChunkData(BaseModel):
         """End time of the chunk (in seconds)."""
         return self.timestamp[1]
 
+    @field_validator("text", mode="before")
+    @classmethod
+    def trim_spaces(cls, v):
+        if isinstance(v, str):
+            return v.strip()
+        return v
+
     @model_validator(mode="after")
     def _validate_timestamp(self) -> Self:
         if len(self.timestamp) != 2:
@@ -129,7 +142,7 @@ class TranscriptionChunkData(BaseModel):
         return self
 
     def format_timestamp(self) -> str:
-        return f"{format_duration(self.start_time)} -> {format_duration(self.end_time)}"
+        return f"{format_duration(self.start_time)} --> {format_duration(self.end_time)}"
 
     def __str__(self):
         return f"({self.format_timestamp()})\n{self.text}"
@@ -142,15 +155,27 @@ class TranscriptionSpeakerData(TranscriptionChunkData):
     """Speaker identifier."""
 
     def __str__(self):
-        return f"{self.speaker} ({self.format_timestamp()}):\n{self.text}"
+        return f"{self.speaker}\n({self.format_timestamp()})\n{self.text}"
 
 
 class TranscriptionResultData(BaseModel):
     """Transcription result data."""
 
     speakers: list[TranscriptionSpeakerData]
+    """Speaker chunks."""
+
     chunks: list[TranscriptionChunkData]
+    """Transcription chunks."""
+
     text: str
+    """Full transcribed text."""
+
+    @field_validator("text", mode="before")
+    @classmethod
+    def trim_spaces(cls, v):
+        if isinstance(v, str):
+            return v.strip()
+        return v
 
     def group_by_speaker(self) -> "TranscriptionResultData":
         """Group chunks by speaker. If speaker data is not available, return the original result."""
@@ -174,7 +199,10 @@ class TranscriptionResultData(BaseModel):
                 new_speaker_chunks[-1].start_time,
                 speaker_chunk.end_time,
             ]
-            new_speaker_chunks[-1].text += speaker_chunk.text
+            if new_speaker_chunks[-1].text:
+                new_speaker_chunks[-1].text += f" {speaker_chunk.text}"
+            else:
+                new_speaker_chunks[-1].text = speaker_chunk.text
         return TranscriptionResultData(
             speakers=new_speaker_chunks,
             chunks=self.chunks,
@@ -195,18 +223,14 @@ def _build_result(diarization_chunks: list, outputs) -> TranscriptionResultData:
 
 
 # TODO: Deprecate this format and move it to the transcript formatter script.
-def _transcript_to_text(transcript: TranscriptionResultData, group_by_speaker: bool = False) -> str:
+def _transcript_to_text(transcript: TranscriptionResultData) -> str:
     """
     Convert the transcription result to a text format.
 
     Remarks
     ----
     - If speaker data is available, use the speaker format. Otherwise, use the chunk format.
-    - If `group_by_speaker` is True, group the chunks by speaker (only if speaker data is available).
     """
-
-    if group_by_speaker:
-        transcript = transcript.group_by_speaker()
 
     if transcript.speakers:
         return "\n\n".join([str(speaker) for speaker in transcript.speakers])
@@ -241,7 +265,7 @@ def execute(params: CommandParams) -> None:
 
     if params.output_file_path.extension == ".txt":
         with open(params.output_file_path.full_path, "w", encoding="utf8") as fp:
-            fp.write(_transcript_to_text(result, group_by_speaker=True))
+            fp.write(_transcript_to_text(result.group_by_speaker()))
     else:
         with open(params.output_file_path.full_path, "w", encoding="utf8") as fp:
             json.dump(result.model_dump(), fp, ensure_ascii=False)
