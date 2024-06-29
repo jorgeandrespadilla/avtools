@@ -86,6 +86,18 @@ For more information on the available options, run the following command:
 poetry run python youtube_video_downloader.py --help
 ```
 
+## Development
+
+### Testing
+
+To run manual tests, use the following command:
+
+```bash
+poetry run python -m tests.utils._your_test_file_
+```
+
+> All manual tests are located in files prefixed with an underscore (eg. `_test_file_path`).	
+
 ## Additional Information
 
 - https://github.com/python-poetry/poetry/issues/7685
