@@ -10,7 +10,7 @@ from app.utils import (
     is_url,
     list_extensions,
 )
-import app.runner as transcriber
+import app.commands.audio_transcriber as transcriber
 
 SUPPORTED_INPUT_EXTENSIONS = [".mp3", ".wav"]
 SUPPORTED_OUTPUT_EXTENSIONS = [".json", ".txt"]
