@@ -23,6 +23,7 @@ pyannote-audio = "^3.3.1"
 ruff = "^0.4.10"
 pytube = "^15.0.0"
 numpy = "^1.26.4"
+openai = "^1.35.7"
 
 [[tool.poetry.source]]
 name = "pytorch-cuda"
