@@ -20,6 +20,9 @@ try:
     print("With Full Name:", file_path.with_full_name('test.txt'))
     print("With Base Name:", file_path.with_base_name('test'))
     print("With Extension:", file_path.with_extension('.txt'))
+    other_path = file_path.full_path.parent.parent
+    print("Other Path:", other_path)
+    print("Relative Path:", file_path.full_path.relative_to(other_path))
 
     # Other
     print("New File with Same Directory:", FilePath(
@@ -28,5 +31,6 @@ try:
         file_path.directory_path / 'nested' / 'new_file.py'))
     print("Sample File with Nested Directory:", FilePath(
         file_path.directory_path / 'nested' / file_path.full_name))
+    
 except ValueError as e:
     print(f"Validation error: {e}")
