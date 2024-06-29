@@ -1,7 +1,15 @@
+from functools import wraps
 from pathlib import Path
 import os
 import subprocess
+from typing import Callable, Optional, ParamSpec, Union, overload
+from typing_extensions import TypeVar
 import dotenv
+from pydantic_core import ValidationError, ErrorDetails
+from rich import print as rprint
+
+
+# region Helper Functions
 
 
 def get_env(key: str, default: str | None = None) -> str | None:
@@ -38,7 +46,7 @@ def list_extensions(extensions: list[str], separator: str = ", ") -> str:
 def flatten_list(list_: list) -> list:
     """
     Flatten a list of iterables (eg. lists, tuples, etc.) into a single list.
-    
+
     Remarks:
     - Non-iterable elements are not flattened.
     - This function is not recursive (only flattens the first level, not nested lists).
@@ -61,6 +69,117 @@ def check_ffmpeg_installed():
         raise Exception(
             "ffmpeg is not installed. Please install ffmpeg before running this script."
         )
+
+
+# endregion
+
+
+# region Decorators
+
+# See https://lemonfold.io/posts/2022/dbc/typed_decorator/
+
+
+def _format_validation_error(e: ValidationError, debug: bool) -> str:
+    """Format a validation error as a string."""
+
+    def clean_error_message(message: str) -> str:
+        message_prefix_to_clean = "Value error, "
+        return (
+            message.replace(message_prefix_to_clean, "", 1)
+            if message.startswith(message_prefix_to_clean)
+            else message
+        )
+
+    def format_error_details(details: ErrorDetails, debug: bool) -> str:
+        if debug:
+            return str(details)
+
+        cleaned_message = clean_error_message(details["msg"])
+        return (
+            f"{cleaned_message}"
+            # f" (field: {details['loc'][0]})"
+        )
+
+    errors = e.errors(include_context=False)
+    error_messages = [format_error_details(error, debug) for error in errors]
+
+    if len(error_messages) == 1:
+        return f"[bold red]Validation Error:[/bold red] {error_messages[0]}"
+
+    return "[bold red]Validation Errors:[/bold red]\n" + "\n".join(
+        [f"  - {msg}" for msg in error_messages]
+    )
+
+
+P = ParamSpec("P")
+R = TypeVar("R")
+
+
+@overload
+def handle_errors(func: Callable[P, Optional[R]]) -> Callable[P, Optional[R]]: ...
+
+
+@overload
+def handle_errors(
+    *, debug: bool
+) -> Callable[[Callable[P, Optional[R]]], Callable[P, Optional[R]]]: ...
+
+
+def handle_errors(
+    func: Optional[Callable[P, Optional[R]]] = None, *, debug: bool = False
+) -> Union[
+    Callable[P, Optional[R]], Callable[[Callable[P, Optional[R]]], Callable[P, Optional[R]]]
+]:
+    """
+    A decorator that adds exception handling.
+
+    Parameters
+    ----------
+    debug : bool, optional
+        If True, prints additional debug information, by default False.
+        This is a keyword-only argument.
+
+    Usage
+    -----
+    @handle_errors
+    def my_function():
+        ...
+
+    @handle_errors(debug=True)
+    def my_function():
+        ...
+    """
+
+    def decorator(func: Callable[P, Optional[R]]) -> Callable[P, Optional[R]]:
+        @wraps(func)
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> Optional[R]:
+            try:
+                return func(*args, **kwargs)
+            except KeyboardInterrupt:
+                rprint("[bold red]Operation cancelled by the user.[/bold red]")
+            except ValidationError as e:
+                rprint(_format_validation_error(e, debug))
+            except Exception as e:
+                rprint(f"[bold red]Error:[/bold red] {e}")
+                if debug:
+                    raise
+
+        return wrapper
+
+    if func is not None:
+        if not callable(func):
+            raise TypeError(
+                "The provided argument is not callable. Did you forget to use a keyword argument?"
+            )
+        return decorator(func)
+
+    return decorator
+
+
+# endregion
+
+
+# region Helper Classes
 
 
 class FilePath:
@@ -144,3 +263,6 @@ class FilePath:
 
     def __str__(self) -> str:
         return str(self.full_path)
+
+
+# endregion
