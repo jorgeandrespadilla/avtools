@@ -1,5 +1,4 @@
 import json
-from app.models import DiarizationPipelineParams, TranscriptionPipelineParams
 from app.pipelines import transcription, diarization
 
 SUPPORTED_INPUT_EXTENSIONS = [".mp3", ".wav"]
@@ -53,28 +52,25 @@ def execute(
         raise ValueError("Diarization requires timestamps to be enabled.")
 
     # Transcription
-    outputs = transcription.run(
-        TranscriptionPipelineParams(
-            input_file=input_file,
-            device_id=device_id,
-            enable_timestamps=enable_timestamps,
-            language=language,
-        )
+    transcription_params = transcription.PipelineParams(
+        input_file=input_file,
+        device_id=device_id,
+        enable_timestamps=enable_timestamps,
+        language=language,
     )
+    transcription_result = transcription.run(transcription_params)
 
     # Diarization
     if hf_token:
-        speakers_transcript = diarization.run(
-            DiarizationPipelineParams(
-                input_file=input_file,
-                device_id=device_id,
-                hf_token=hf_token,
-            ),
-            outputs,
+        diarization_params = diarization.PipelineParams(
+            input_file=input_file,
+            device_id=device_id,
+            hf_token=hf_token,
         )
-        result = build_result(speakers_transcript, outputs)
+        diarization_result = diarization.run(diarization_params, transcription_result) # Speakers transcript
+        result = build_result(diarization_result, transcription_result)
     else:
-        result = build_result([], outputs)
+        result = build_result([], transcription_result)
 
     if output_file.endswith(".txt"):
         with open(output_file, "w", encoding="utf8") as fp:
