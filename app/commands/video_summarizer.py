@@ -37,6 +37,9 @@ class CommandParams(BaseModel):
     output_dir: str
     """Output folder path (the files will be saved in this folder). If the folder does not exist, it will be created."""
 
+    openai_key: str
+    """OpenAI API key for summarizing the video."""
+
     verbose: bool = False
     """Enable verbose mode."""
 
