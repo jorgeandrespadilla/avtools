@@ -86,6 +86,22 @@ For more information on the available options, run the following command:
 poetry run python youtube_video_downloader.py --help
 ```
 
+## Summarize Videos
+
+```bash
+poetry run python video_summarizer.py \
+    -v <path_to_input_video_file>.mp4 \
+    -t <path_to_output_transcript_file>.vtt \
+    -o <path_to_output_directory>
+    --openai_key <openai_api_key>
+```
+
+For more information on the available options, run the following command:
+
+```bash
+poetry run python video_summarizer.py --help
+```
+
 ## Development
 
 ### Testing

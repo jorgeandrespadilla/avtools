@@ -61,5 +61,5 @@ def main():
 
 if __name__ == "__main__":
     # Example Usage:
-    # python video_summarizer.py -v /tmp/my/video/file.mp4 -t /tmp/my/transcript/file.txt -o /tmp/my/output/dir
+    # python video_summarizer.py -v /tmp/my/video/file.mp4 -t /tmp/my/transcript/file.txt -o /tmp/my/output/dir --openai_key "my_openai_key"
     main()
