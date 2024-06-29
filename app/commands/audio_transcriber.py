@@ -3,7 +3,7 @@ from typing import Self
 
 from pydantic import BaseModel, ConfigDict, computed_field, model_validator
 from app.pipelines import transcription, diarization
-from app.utils import FilePath, is_supported_extension, is_url, list_extensions
+from app.utils import FilePath, format_duration, is_supported_extension, is_url, list_extensions
 
 SUPPORTED_INPUT_EXTENSIONS = [".mp3", ".wav"]
 SUPPORTED_OUTPUT_EXTENSIONS = [".json", ".txt"]
@@ -90,43 +90,132 @@ class CommandParams(BaseModel):
             )
 
 
-def build_result(transcript, outputs):
-    return {
-        "speakers": transcript,
-        "chunks": outputs["chunks"],
-        "text": outputs["text"],
-    }
+# region Data Models
 
 
-def group_chunks_by_speaker(chunks: list[dict]) -> list[dict]:
-    new_chunks = []
-    current_speaker = None
-    for chunk in chunks:
-        if current_speaker != chunk["speaker"]:
-            current_speaker = chunk["speaker"]
-            new_chunks.append(
-                {"speaker": current_speaker, "timestamp": chunk["timestamp"], "text": ""}
+class TranscriptionChunkData(BaseModel):
+    """Transcription data for a chunk of speech."""
+
+    timestamp: list[float]
+    """Start and end timestamps of the speaker's speech (in seconds)."""
+
+    text: str
+    """Transcribed text."""
+
+    @computed_field
+    @property
+    def start_time(self) -> float:
+        """Start time of the chunk (in seconds)."""
+        return self.timestamp[0]
+
+    @computed_field
+    @property
+    def end_time(self) -> float:
+        """End time of the chunk (in seconds)."""
+        return self.timestamp[1]
+
+    @model_validator(mode="after")
+    def _validate_timestamp(self) -> Self:
+        if len(self.timestamp) != 2:
+            raise ValueError(
+                f"Invalid timestamp: {self.timestamp}. Expected 2 values (start and end times)."
             )
-        new_chunks[-1]["timestamp"] = [new_chunks[-1]["timestamp"][0], chunk["timestamp"][1]]
-        new_chunks[-1]["text"] += chunk["text"]
-    return new_chunks
+        if self.timestamp[0] < 0:
+            raise ValueError(f"Invalid start time: {self.timestamp[0]}")
+        if self.timestamp[1] < 0:
+            raise ValueError(f"Invalid end time: {self.timestamp[1]}")
+        if self.timestamp[1] < self.timestamp[0]:
+            raise ValueError(f"End time is less than start time: {self.timestamp}")
+        return self
+
+    def format_timestamp(self) -> str:
+        return f"{format_duration(self.start_time)} -> {format_duration(self.end_time)}"
+
+    def __str__(self):
+        return f"({self.format_timestamp()})\n{self.text}"
 
 
-# TODO: Deprecate this format and move it to the transcript formatter script
-def transcript_to_text(transcript: dict, group_by_speaker: bool = False) -> str:
-    if "speakers" in transcript:
-        if group_by_speaker:
-            transcript["speakers"] = group_chunks_by_speaker(transcript["speakers"])
-        timestamp_parser = lambda x: f"{x[0]}s - {x[1]}s"  # noqa: E731
-        return "\n\n".join(
-            f"{speaker['speaker']} ({timestamp_parser(speaker['timestamp'])}):\n{speaker['text']}"
-            for speaker in transcript["speakers"]
+class TranscriptionSpeakerData(TranscriptionChunkData):
+    """Transcription data for a speaker."""
+
+    speaker: str
+    """Speaker identifier."""
+
+    def __str__(self):
+        return f"{self.speaker} ({self.format_timestamp()}):\n{self.text}"
+
+
+class TranscriptionResultData(BaseModel):
+    """Transcription result data."""
+
+    speakers: list[TranscriptionSpeakerData]
+    chunks: list[TranscriptionChunkData]
+    text: str
+
+    def group_by_speaker(self) -> "TranscriptionResultData":
+        """Group chunks by speaker. If speaker data is not available, return the original result."""
+
+        if not self.speakers:
+            return self  # Unable to group chunks without speaker data
+
+        new_speaker_chunks: list[TranscriptionSpeakerData] = []
+        current_speaker = None
+        for speaker_chunk in self.speakers:
+            if current_speaker != speaker_chunk.speaker:
+                current_speaker = speaker_chunk.speaker
+                new_speaker_chunks.append(
+                    TranscriptionSpeakerData(
+                        speaker=current_speaker,
+                        timestamp=[*speaker_chunk.timestamp],
+                        text="",
+                    )
+                )
+            new_speaker_chunks[-1].timestamp = [
+                new_speaker_chunks[-1].start_time,
+                speaker_chunk.end_time,
+            ]
+            new_speaker_chunks[-1].text += speaker_chunk.text
+        return TranscriptionResultData(
+            speakers=new_speaker_chunks,
+            chunks=self.chunks,
+            text=self.text,
         )
-    else:
-        return transcript["text"]
+
+
+# endregion
+
+
+def _build_result(diarization_chunks: list, outputs) -> TranscriptionResultData:
+    """Build the final transcription result using the output of the diarization and transcription pipelines."""
+    return TranscriptionResultData(
+        speakers=diarization_chunks,
+        chunks=outputs["chunks"],
+        text=outputs["text"],
+    )
+
+
+# TODO: Deprecate this format and move it to the transcript formatter script.
+def _transcript_to_text(transcript: TranscriptionResultData, group_by_speaker: bool = False) -> str:
+    """
+    Convert the transcription result to a text format.
+
+    Remarks
+    ----
+    - If speaker data is available, use the speaker format. Otherwise, use the chunk format.
+    - If `group_by_speaker` is True, group the chunks by speaker (only if speaker data is available).
+    """
+
+    if group_by_speaker:
+        transcript = transcript.group_by_speaker()
+
+    if transcript.speakers:
+        return "\n\n".join([str(speaker) for speaker in transcript.speakers])
+    return "\n\n".join([str(chunk) for chunk in transcript.chunks])
 
 
 def execute(params: CommandParams) -> None:
+    """Execute the audio transcription command."""
+
     # Transcription
     transcription_params = transcription.PipelineParams(
         input_file=params.input_file_or_url,
@@ -146,13 +235,13 @@ def execute(params: CommandParams) -> None:
         diarization_result = diarization.run(
             diarization_params, transcription_result
         )  # Speakers transcript
-        result = build_result(diarization_result, transcription_result)
+        result = _build_result(diarization_result, transcription_result)
     else:
-        result = build_result([], transcription_result)
+        result = _build_result([], transcription_result)
 
     if params.output_file_path.extension == ".txt":
         with open(params.output_file_path.full_path, "w", encoding="utf8") as fp:
-            fp.write(transcript_to_text(result, group_by_speaker=True))
+            fp.write(_transcript_to_text(result, group_by_speaker=True))
     else:
         with open(params.output_file_path.full_path, "w", encoding="utf8") as fp:
-            json.dump(result, fp, ensure_ascii=False)
+            json.dump(result.model_dump(), fp, ensure_ascii=False)
