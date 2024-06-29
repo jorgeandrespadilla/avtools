@@ -3,11 +3,14 @@ import argparse
 from rich import print as rprint
 
 from app.commands import youtube_video_downloader
-from app.utils import handle_errors
+from app.utils import ArgumentHelpFormatter, handle_errors
 
 
 def _parse_args():
-    parser = argparse.ArgumentParser(description="Download a YouTube video.")
+    parser = argparse.ArgumentParser(
+        description="Download a YouTube video.",
+        formatter_class=ArgumentHelpFormatter,
+    )
     parser.add_argument(
         "-u", "--video_url", required=True, type=str, help="Input YouTube video URL."
     )

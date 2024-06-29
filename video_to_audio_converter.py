@@ -3,11 +3,14 @@ import argparse
 from rich import print as rprint
 
 from app.commands import video_to_audio_converter
-from app.utils import handle_errors
+from app.utils import ArgumentHelpFormatter, handle_errors
 
 
 def _parse_args():
-    parser = argparse.ArgumentParser(description="Convert video to audio.")
+    parser = argparse.ArgumentParser(
+        description="Convert video to audio.",
+        formatter_class=ArgumentHelpFormatter,
+    )
     parser.add_argument("-i", "--input_file", required=True, type=str, help="Input video file path")
     parser.add_argument(
         "-o",

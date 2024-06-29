@@ -1,8 +1,11 @@
 import argparse
 
 from app.models import CLIArgs
+from app.utils import ArgumentHelpFormatter
 
-parser = argparse.ArgumentParser(description="Audio Transcriber")
+parser = argparse.ArgumentParser(
+    description="Audio Transcriber", formatter_class=ArgumentHelpFormatter
+)
 parser.add_argument(
     "-i",
     "--input",
