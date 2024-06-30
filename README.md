@@ -52,7 +52,7 @@ poetry run python cli.py transcribe --i <path_to_audio_file>.mp3 --o <path_to_ou
 ### Convert Video to Audio
 
 ```bash
-poetry run python video_to_audio_converter.py -i <path_to_input_video_file>.mp4 -o <path_to_output_audio_file>.mp3
+poetry run python cli.py video-audio -i <path_to_input_video_file>.mp4 -o <path_to_output_audio_file>.mp3
 ```
 
 ### Convert Transcripts to Different Formats
