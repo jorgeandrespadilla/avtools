@@ -87,8 +87,8 @@ def format_duration(
 
     whole_seconds = int(duration)
     hours = whole_seconds // 3600
-    minutes = (duration % 3600) // 60
-    seconds = duration % 60
+    minutes = (whole_seconds % 3600) // 60
+    seconds = whole_seconds % 60
 
     formatted_time = f"{hours:02}:{minutes:02}:{int(seconds):02}"
 
