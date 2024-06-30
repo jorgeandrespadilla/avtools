@@ -14,13 +14,10 @@ accelerate = "^0.27.2"
 torch = {version = "^2.3.1+cu121", source = "pytorch-cuda"}
 torchvision = {version = "^0.18.1+cu121", source = "pytorch-cuda"}
 torchaudio = {version = "^2.3.1+cu121", source = "pytorch-cuda"}
-ipykernel = "^6.29.3"
-notebook = "^7.1.1"
 pydantic = "^2.7.4"
 rich = "^13.7.1"
 python-dotenv = "^1.0.1"
 pyannote-audio = "^3.3.1"
-ruff = "^0.4.10"
 pytube = "^15.0.0"
 numpy = "^1.26.4"
 youtube-transcript-api = "^0.6.2"
@@ -29,6 +26,10 @@ youtube-transcript-api = "^0.6.2"
 name = "pytorch-cuda"
 url = "https://download.pytorch.org/whl/cu121"
 priority = "supplemental"
+
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.5.0"
 
 [build-system]
 requires = ["poetry-core"]

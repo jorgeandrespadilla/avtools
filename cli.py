@@ -9,6 +9,8 @@ from app.commands.youtube_video_downloader import YouTubeDownloadCommandHandler
 from app.models import ICommandHandler
 from app.utils import ArgumentHelpFormatter, handle_errors
 
+CLI_VERSION = "1.0.0"
+
 # List of all command handlers
 COMMANDS: list[ICommandHandler] = [
     TranscriberCommandHandler(),
@@ -49,8 +51,16 @@ def main():
 
     # Configure the CLI
     parser = argparse.ArgumentParser(
-        description="AV Tools CLI",
+        prog="avtools",
+        description="AV Tools CLI - A CLI tool for audio and video processing",
         formatter_class=ArgumentHelpFormatter,
+    )
+    parser.add_argument(
+        "-v",
+        "--version",
+        action="version",
+        version=f"v{CLI_VERSION}",
+        help="Show current version of the CLI",
     )
     subparsers = parser.add_subparsers(title="Commands", dest="command")
 
