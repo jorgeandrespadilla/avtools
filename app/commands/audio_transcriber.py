@@ -2,18 +2,28 @@ import json
 from typing import Self
 
 from pydantic import BaseModel, ConfigDict, computed_field, model_validator
-from app.models import TranscriptionResultData
+from rich import print as rprint
+
+from app.models import ICommandHandler, TranscriptionResultData
 from app.pipelines import transcription, diarization
-from app.utils import FilePath, is_supported_extension, is_url, list_extensions
+from app.utils import FilePath, get_env, is_supported_extension, is_url, list_extensions
+
+
+# region Constants
+
 
 SUPPORTED_INPUT_EXTENSIONS = [".mp3", ".wav"]
 SUPPORTED_OUTPUT_EXTENSIONS = [".json"]
+HUGGING_FACE_TOKEN_ENV_VAR = "HUGGING_FACE_TOKEN"
+
+
+# endregion
 
 
 # region Parameters
 
 
-class CommandParams(BaseModel):
+class _CommandParams(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     input_file: str
@@ -97,40 +107,111 @@ class CommandParams(BaseModel):
 # endregion
 
 
-def _build_result(diarization_chunks: list, outputs) -> TranscriptionResultData:
-    """Build the final transcription result using the output of the diarization and transcription pipelines."""
-    return TranscriptionResultData(
-        speakers=diarization_chunks,
-        chunks=outputs["chunks"],
-        text=outputs["text"],
-    )
+# region Command
 
 
-def execute(params: CommandParams) -> None:
-    """Execute the audio transcription command."""
+class _TranscriberCommand:
+    """Transcribe audio files."""
 
-    # Transcription
-    transcription_params = transcription.PipelineParams(
-        input_file=params.input_file_or_url,
-        device_id=params.device_id,
-        enable_timestamps=params.enable_timestamps,
-        language=params.language,
-    )
-    transcription_result = transcription.run(transcription_params)
+    def __init__(self, params: _CommandParams):
+        self.params = params
 
-    # Diarization
-    if params.hf_token:
-        diarization_params = diarization.PipelineParams(
-            input_file=params.input_file_or_url,
-            device_id=params.device_id,
-            hf_token=params.hf_token,
+
+    def execute(self) -> None:
+        # Transcription
+        transcription_params = transcription.PipelineParams(
+            input_file=self.params.input_file_or_url,
+            device_id=self.params.device_id,
+            enable_timestamps=self.params.enable_timestamps,
+            language=self.params.language,
         )
-        diarization_result = diarization.run(
-            diarization_params, transcription_result
-        )  # Speakers transcript
-        result = _build_result(diarization_result, transcription_result)
-    else:
-        result = _build_result([], transcription_result)
+        transcription_result = transcription.run(transcription_params)
 
-    with open(params.output_file_path.full_path, "w", encoding="utf8") as fp:
-        json.dump(result.model_dump(), fp, ensure_ascii=False)
+        # Diarization
+        if self.params.hf_token:
+            diarization_params = diarization.PipelineParams(
+                input_file=self.params.input_file_or_url,
+                device_id=self.params.device_id,
+                hf_token=self.params.hf_token,
+            )
+            diarization_result = diarization.run(
+                diarization_params, transcription_result
+            )  # Speakers transcript
+            result = self._build_result(diarization_result, transcription_result)
+        else:
+            result = self._build_result([], transcription_result)
+
+        with open(self.params.output_file_path.full_path, "w", encoding="utf8") as fp:
+            json.dump(result.model_dump(), fp, ensure_ascii=False)
+
+
+    def _build_result(self, diarization_chunks: list, outputs) -> TranscriptionResultData:
+        """
+        Build the final transcription result using the output of the 
+        diarization and transcription pipelines.
+        """
+        return TranscriptionResultData(
+            speakers=diarization_chunks,
+            chunks=outputs["chunks"],
+            text=outputs["text"],
+        )
+
+
+# endregion
+
+
+# region Handler
+
+class TranscriberCommandHandler(ICommandHandler):
+
+    def __init__(self):
+        self.name = "transcribe"
+        self.description = "Transcribe audio files."
+
+    def configure_args(self, parser):
+        parser.add_argument(
+            "-i",
+            "--input",
+            required=True,
+            type=str,
+            help="Path or URL to the audio file to be transcribed.",
+        )
+        parser.add_argument(
+            "-o",
+            "--output",
+            required=False,
+            default="output.json",
+            type=str,
+            help=f"Path to save the transcription. If not provided, the output will be saved in the same directory as the input file. Format will be inferred from the file extension. Supported formats: {list_extensions(SUPPORTED_OUTPUT_EXTENSIONS)}.",
+        )
+        parser.add_argument(
+            "--language",
+            required=False,
+            default=None,
+            type=str,
+            help="Provide the language code for the audio file (eg. 'en', 'es'). If not provided, the language will be detected automatically. For a list of supported languages, visit https://github.com/openai/whisper#available-models-and-languages.",
+        )
+        parser.add_argument(
+            "--hf-token",
+            required=False,
+            default=None,
+            type=str,
+            help=f"Provide a hf.co/settings/token for Pyannote.audio to diarise the audio clips. If not provided, it will be searched in the environment variables ({HUGGING_FACE_TOKEN_ENV_VAR}). If not found, diarization will be skipped. To use this feature, follow the instructions in https://huggingface.co/pyannote/speaker-diarization-3.1.",
+        )
+
+
+    def run(self, args) -> None:
+        hf_token = args.hf_token or get_env(HUGGING_FACE_TOKEN_ENV_VAR)
+
+        command_params = _CommandParams(
+            input_file=args.input,
+            output_file=args.output,
+            language=args.language,
+            hf_token=hf_token,  # Use diarization model
+        )
+        _TranscriberCommand(command_params).execute()
+
+        rprint(f"[bold green]Transcription saved to '{command_params.output_file_path}'[/bold green]")
+
+
+# endregion

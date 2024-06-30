@@ -1,7 +1,37 @@
+from abc import ABC, abstractmethod
+import argparse
 from typing import Self
 from pydantic import BaseModel, computed_field, field_validator, model_validator
 
 from app.utils import format_duration
+
+
+# region Base Models
+
+
+class ICommandHandler(ABC):
+    """Interface for command handlers."""
+    
+    name: str
+    """Command name."""
+
+    description: str
+    """Command description."""
+
+    @abstractmethod
+    def configure_args(self, parser: argparse.ArgumentParser) -> None:
+        """Configure the command line arguments for the command."""	
+        pass
+
+    @abstractmethod
+    def run(self, args: argparse.Namespace) -> None:
+        """Run the command with the given arguments."""
+        pass
+
+    def __str__(self):
+        return self.name
+
+# endregion
 
 
 # region Transcription Data Models
