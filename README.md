@@ -76,8 +76,14 @@ Supported output formats:
 poetry run python cli.py youtube-download -u <youtube_video_url> -o <path_to_output_file>.mp4
 ```
 
-## Additional Information
+## Packaging
 
-- https://github.com/python-poetry/poetry/issues/7685
-- https://github.com/Vaibhavs10/insanely-fast-whisper/issues/183
-- https://pybit.es/articles/how-to-package-and-deploy-cli-apps/
+To package the CLI application, run the following command:
+
+```bash
+poetry run pyinstaller --onefile --name=avtools --icon=icon.ico cli.py
+```
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
