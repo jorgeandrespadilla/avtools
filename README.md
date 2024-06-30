@@ -31,10 +31,20 @@ This project is an AI powered audio transcriber, which is based on the [insanely
 
 ## Usage
 
+```bash
+poetry run python cli.py
+```
+
+For more information on the available commands, use the `--help` argument:
+
+```bash
+poetry run python cli.py --help
+```
+
 ### Transcribe
 
 ```bash
-poetry run python audio_transcriber.py --i <path_to_audio_file>.mp3 --o <path_to_output_file>.json
+poetry run python cli.py transcribe --i <path_to_audio_file>.mp3 --o <path_to_output_file>.json
 ```
 
 > To use diarization feature, add the `--hf-token` argument with the access token. We do not recommended to use this feature for large audio files.
@@ -64,12 +74,6 @@ Supported output formats:
 
 ```bash
 poetry run python youtube_video_downloader.py -u <youtube_video_url> -o <path_to_output_file>.mp4
-```
-
-For more information on the available options, run the following command:
-
-```bash
-poetry run python youtube_video_downloader.py --help
 ```
 
 ## Additional Information
