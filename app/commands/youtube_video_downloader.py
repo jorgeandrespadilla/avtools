@@ -204,6 +204,58 @@ class MediaStreams:
         )
 
 
+class YouTubeTranscript:
+    """
+    YouTube transcript helper class.
+    """
+
+    def __init__(self, raw_transcript: list[dict], language_code: str):
+        self.raw_transcript = raw_transcript
+        """Raw transcript data."""
+
+        self.language_code = language_code
+        """Transcript language code."""
+
+    def format(self) -> TranscriptionResultData:
+        """
+        Format the raw transcript data to standard format.
+        """
+        text = ""
+        chunks: list[TranscriptionChunkData] = []
+        total_chunks = len(self.raw_transcript)
+        for i, current_item in enumerate(self.raw_transcript):
+            next_item = self.raw_transcript[i + 1] if i + 1 < total_chunks else None
+            chunk = self._format_chunk(current_item, next_item)            
+            text += " " + chunk.text
+            chunks.append(chunk)
+        return TranscriptionResultData(
+            speakers=[],
+            chunks=chunks,
+            text=text,
+        )
+    
+    def _format_chunk(self, current_item: dict, next_item: dict | None) -> TranscriptionChunkData:
+        """
+        Format a transcript chunk.
+
+        Remarks
+        ----
+        We assume that the start time of the next item is the end time of the current item,
+        because the YouTube transcript API duration overlaps with the next item duration
+        (when the next item starts, the current item is still being shown).
+        """
+
+        text = current_item["text"]
+        start_time = current_item["start"]
+        current_item_end_time = round(start_time + current_item["duration"], 3)
+        end_time = current_item_end_time if next_item is None else next_item["start"]
+
+        return TranscriptionChunkData(
+            text=text,
+            timestamp=[start_time, end_time],
+        )
+
+
 # endregion
 
 
@@ -471,32 +523,12 @@ class _YouTubeDownloadCommand:
                 "No transcript found for the video with language code '{self.params.transcript}'. Please try another language code."
             )
 
-        formatted_transcript = self._format_raw_transcript(raw_transcript)
+        raw_transcript = YouTubeTranscript(
+            raw_transcript=raw_transcript, language_code=self.params.transcript
+        )        
+        formatted_transcript = raw_transcript.format()
         with open(self.params.transcript_file_path.full_path, "w", encoding="utf8") as file:
             json.dump(formatted_transcript.model_dump(), file, ensure_ascii=False)
-
-    def _format_raw_transcript(self, raw_transcript: list[dict]) -> TranscriptionResultData:
-        """
-        Format the raw transcript data to standard format.
-        """
-        text = ""
-        chunks: list[TranscriptionChunkData] = []
-        for item in raw_transcript:
-            if "text" not in item:
-                continue
-            text += " " + item["text"]
-            start_time = item["start"]
-            end_time = start_time + item["duration"]
-            chunk = TranscriptionChunkData(
-                text=item["text"],
-                timestamp=[start_time, end_time],
-            )
-            chunks.append(chunk)
-        return TranscriptionResultData(
-            speakers=[],
-            chunks=chunks,
-            text=text,
-        )
 
     def _merge_video_and_audio(self, video_file_path: str, audio_file_path: str):
         """Merge the video and audio files using ffmpeg."""
