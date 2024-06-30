@@ -29,6 +29,10 @@ name = "pytorch-cuda"
 url = "https://download.pytorch.org/whl/cu121"
 priority = "supplemental"
 
+
+[tool.poetry.group.dev.dependencies]
+pyinstaller = "^6.8.0"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
