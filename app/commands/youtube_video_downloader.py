@@ -608,6 +608,8 @@ class YouTubeDownloadCommandHandler(ICommandHandler):
         )
         _YouTubeDownloadCommand(command_params).execute()
         rprint(f"[bold green]Video downloaded to '{command_params.output_file_path}'[/bold green]")
+        if command_params.include_transcript:
+            rprint(f"[bold green]Transcript downloaded to '{command_params.transcript_file_path}'[/bold green]")
 
 
 # endregion
