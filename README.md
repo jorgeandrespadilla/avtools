@@ -84,6 +84,16 @@ To package the CLI application, run the following command:
 poetry run pyinstaller --name=avtools --icon=icon.ico cli.py
 ```
 
+Then, the executable file will be available in the `dist/avtools` folder
+
+Finally, generate a ZIP file with the executable file.
+
+```bash
+zip -r dist/avtools-windows-v<VERSION_IDENTIFIER>.zip dist/avtools
+```
+
+> Replace `<VERSION_IDENTIFIER>` with the version number of the application (e.g. 1.0.0).
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
