@@ -1,10 +1,11 @@
 import argparse
 
-from rich import print as printr
+from rich import print as rprint
 
 from app.commands.audio_transcriber import TranscriberCommandHandler
 from app.commands.transcript_formatter import FormatterCommandHandler
 from app.commands.video_to_audio_converter import VideoToAudioCommandHandler
+from app.commands.youtube_video_downloader import YouTubeDownloadCommandHandler
 from app.models import ICommandHandler
 from app.utils import ArgumentHelpFormatter, handle_errors
 
@@ -13,6 +14,7 @@ COMMANDS: list[ICommandHandler] = [
     TranscriberCommandHandler(),
     FormatterCommandHandler(),
     VideoToAudioCommandHandler(),
+    YouTubeDownloadCommandHandler(),
 ]
 
 
@@ -33,7 +35,7 @@ def _check_commands():
     for command_name, handler_names in occurrences.items():
         if len(handler_names) > 1:
             has_duplicates = True
-            printr(
+            rprint(
                 f"Duplicate command name '{command_name}' found in handlers: {', '.join(handler_names)}"
             )
 
