@@ -73,7 +73,7 @@ Supported output formats:
 ### Download YouTube Video
 
 ```bash
-poetry run python youtube_video_downloader.py -u <youtube_video_url> -o <path_to_output_file>.mp4
+poetry run python cli.py youtube-download -u <youtube_video_url> -o <path_to_output_file>.mp4
 ```
 
 ## Additional Information
