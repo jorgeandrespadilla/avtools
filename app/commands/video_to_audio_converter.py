@@ -1,9 +1,11 @@
 import subprocess
 
 from pydantic import BaseModel, ConfigDict, computed_field, model_validator
+from rich import print as rprint
 from rich.progress import Progress, TimeElapsedColumn, BarColumn, TextColumn
 from typing_extensions import Self
 
+from app.models import ICommandHandler
 from app.utils import (
     FilePath,
     check_ffmpeg_installed,
@@ -12,11 +14,19 @@ from app.utils import (
     list_extensions,
 )
 
+
+# region Constants
+
 SUPPORTED_INPUT_EXTENSIONS = [".mp4", ".mkv", ".avi", ".mov"]
 SUPPORTED_OUTPUT_EXTENSIONS = [".mp3", ".wav"]
 
+# endregion
 
-class CommandParams(BaseModel):
+
+# region Parameters
+
+
+class _CommandParams(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     input_file: str
@@ -65,41 +75,89 @@ class CommandParams(BaseModel):
         return self
 
 
-def _build_ffmpeg_args(params: CommandParams) -> list[str]:
-    """Generate the arguments for the ffmpeg command to convert video to audio."""
-
-    return flatten_list(
-        [
-            ("-i", str(params.input_file_path.full_path)),  # Input file
-            "-vn",  # No video
-            ("-ar", str(params.sample_rate)),  # Audio rate
-            ("-ab", params.bit_rate),  # Audio bitrate
-            ("-ac", "1"),  # Audio channels
-            # Overwrite output file without asking for confirmation (if it exists)
-            "-y",
-            str(params.output_file_path.full_path),  # Output file
-        ]
-    )
+# endregion
 
 
-def execute(params: CommandParams) -> None:
+# region Command
+
+
+class _VideoToAudioCommand:
     """Convert video to audio."""
 
-    check_ffmpeg_installed()
+    def __init__(self, params: _CommandParams):
+        self.params = params
 
-    with Progress(
-        TextColumn("[progress.description]{task.description}"),
-        BarColumn(style="yellow1", pulse_style="white"),
-        TimeElapsedColumn(),
-    ) as progress:
-        progress.add_task("[yellow]Converting video to audio...", total=None)
+    def execute(self) -> None:
+        check_ffmpeg_installed()
 
-        command_args = _build_ffmpeg_args(params)
+        with Progress(
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(style="yellow1", pulse_style="white"),
+            TimeElapsedColumn(),
+        ) as progress:
+            media_conversion_task = progress.add_task(
+                "[yellow]Converting video to audio...", total=None
+            )
+            self._convert_video_to_audio()
+            progress.update(
+                media_conversion_task,
+                description="[green]Video converted to audio[/green]",
+            )
+
+    def _convert_video_to_audio(self):
+        """Convert video to audio using ffmpeg."""
+        command_args = flatten_list(
+            [
+                ("-i", str(self.params.input_file_path.full_path)),  # Input file
+                "-vn",  # No video
+                ("-ar", str(self.params.sample_rate)),  # Audio rate
+                ("-ab", self.params.bit_rate),  # Audio bitrate
+                ("-ac", "1"),  # Audio channels
+                # Overwrite output file without asking for confirmation (if it exists)
+                "-y",
+                str(self.params.output_file_path.full_path),  # Output file
+            ]
+        )
         output = subprocess.run(["ffmpeg", *command_args], capture_output=True)
 
-    if params.verbose:
-        print(output.stdout.decode("utf-8") or output.stderr.decode("utf-8"))
-    if output.returncode != 0:
-        raise Exception(
-            "Error converting video to audio. Enable verbose mode for more information."
+        if self.params.verbose:
+            rprint(output.stdout.decode("utf-8") or output.stderr.decode("utf-8"))
+        if output.returncode != 0:
+            raise Exception(
+                "Error converting video to audio. Enable verbose mode for more information."
+            )
+
+
+# endregion
+
+
+# region Handler
+
+
+class VideoToAudioCommandHandler(ICommandHandler):
+    def __init__(self):
+        self.name = "video-audio"
+        self.description = "Convert video to audio."
+
+    def configure_args(self, parser):
+        parser.add_argument(
+            "-i", "--input_file", required=True, type=str, help="Input video file path"
         )
+        parser.add_argument(
+            "-o",
+            "--output_file",
+            default="output.mp3",
+            type=str,
+            help="Output audio file path. If output file exists, it will be overwritten.",
+        )
+        parser.add_argument("--verbose", action="store_true", help="Print ffmpeg output")
+
+    def run(self, args) -> None:
+        command_params = _CommandParams(
+            input_file=args.input_file, output_file=args.output_file, verbose=args.verbose
+        )
+        _VideoToAudioCommand(command_params).execute()
+        rprint(f"[bold green]Audio saved to '{command_params.output_file_path}'[/bold green]")
+
+
+# endregion

@@ -1,3 +1,4 @@
+import argparse
 from functools import wraps
 from pathlib import Path
 import os
@@ -7,6 +8,7 @@ from typing_extensions import TypeVar
 import dotenv
 from pydantic_core import ValidationError, ErrorDetails
 from rich import print as rprint
+from rich.progress import Progress
 
 
 # region Helper Functions
@@ -69,6 +71,33 @@ def check_ffmpeg_installed():
         raise Exception(
             "ffmpeg is not installed. Please install ffmpeg before running this script."
         )
+
+
+def format_duration(
+    duration: float,
+    include_milliseconds: bool = False,
+    milliseconds_separator: str = ".",
+) -> str:
+    """
+    Format the duration in seconds to a human-readable string (HH:MM:SS).
+    If `include_milliseconds` is True, it will include milliseconds with the provided separator.
+    """
+
+    if duration < 0:
+        raise ValueError("Duration must be a positive number.")
+
+    whole_seconds = int(duration)
+    hours = whole_seconds // 3600
+    minutes = (whole_seconds % 3600) // 60
+    seconds = whole_seconds % 60
+
+    formatted_time = f"{hours:02}:{minutes:02}:{int(seconds):02}"
+
+    if include_milliseconds:
+        milliseconds = int((duration - whole_seconds) * 1000)
+        formatted_time += f"{milliseconds_separator}{milliseconds:03}"
+
+    return formatted_time
 
 
 # endregion
@@ -255,14 +284,70 @@ class FilePath:
         """Return a new FilePath with the provided base name (without the extension)."""
         return FilePath(self.__full_path.with_stem(name))
 
-    def with_extension(self, extension: str) -> str:
+    def with_extension(self, extension: str) -> "FilePath":
         """Return a new FilePath with the provided extension."""
-        return str(self.__full_path.with_suffix(extension))
+        return FilePath(self.__full_path.with_suffix(extension))
 
     # endregion
 
     def __str__(self) -> str:
         return str(self.full_path)
+
+
+class ArgumentHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
+    """Help message formatter which adds default values to argument help."""
+
+    def _get_help_string(self, action):
+        """
+        Add the default value to the option help message if available.
+
+        ArgumentDefaultsHelpFormatter and BooleanOptionalAction when it isn't
+        already present. This code will do that, detecting cornercases to
+        prevent duplicates or cases where it wouldn't make sense to the end
+        user.
+        """
+        help = action.help
+        if help is None:
+            help = ""
+
+        default = action.default
+
+        # Omit if default value is not given
+        if default is None or default is False:
+            return help
+
+        # Format empty string default value
+        if default == "":
+            return help + ' (default: "")'
+
+        if default is not argparse.SUPPRESS:
+            defaulting_nargs = [argparse.OPTIONAL, argparse.ZERO_OR_MORE]
+            if action.option_strings or action.nargs in defaulting_nargs:
+                help += " (default: %(default)s)"
+        return help
+
+
+class PauseRichProgress:
+    """
+    Context manager to pause the progress bar and clear the terminal line.
+    """
+
+    def __init__(self, progress: Progress) -> None:
+        self._progress = progress
+
+    def _clear_line(self) -> None:
+        UP = "\x1b[1A"
+        CLEAR = "\x1b[2K"
+        for _ in self._progress.tasks:
+            print(UP + CLEAR + UP)
+
+    def __enter__(self):
+        self._progress.stop()
+        self._clear_line()
+        return self._progress
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        self._progress.start()
 
 
 # endregion
