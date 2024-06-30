@@ -81,7 +81,7 @@ poetry run python cli.py youtube-download -u <youtube_video_url> -o <path_to_out
 To package the CLI application, run the following command:
 
 ```bash
-poetry run pyinstaller --onefile --name=avtools --icon=icon.ico cli.py
+poetry run pyinstaller --name=avtools --icon=icon.ico cli.py
 ```
 
 ## License
