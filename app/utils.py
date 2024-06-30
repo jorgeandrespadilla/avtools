@@ -8,6 +8,7 @@ from typing_extensions import TypeVar
 import dotenv
 from pydantic_core import ValidationError, ErrorDetails
 from rich import print as rprint
+from rich.progress import Progress
 
 
 # region Helper Functions
@@ -78,7 +79,7 @@ def format_duration(
     milliseconds_separator: str = ".",
 ) -> str:
     """
-    Format the duration in seconds to a human-readable string (HH:MM:SS). 
+    Format the duration in seconds to a human-readable string (HH:MM:SS).
     If `include_milliseconds` is True, it will include milliseconds with the provided separator.
     """
 
@@ -97,7 +98,7 @@ def format_duration(
         formatted_time += f"{milliseconds_separator}{milliseconds:03}"
 
     return formatted_time
-  
+
 
 # endregion
 
@@ -283,9 +284,9 @@ class FilePath:
         """Return a new FilePath with the provided base name (without the extension)."""
         return FilePath(self.__full_path.with_stem(name))
 
-    def with_extension(self, extension: str) -> str:
+    def with_extension(self, extension: str) -> "FilePath":
         """Return a new FilePath with the provided extension."""
-        return str(self.__full_path.with_suffix(extension))
+        return FilePath(self.__full_path.with_suffix(extension))
 
     # endregion
 
@@ -324,6 +325,29 @@ class ArgumentHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
             if action.option_strings or action.nargs in defaulting_nargs:
                 help += " (default: %(default)s)"
         return help
+
+
+class PauseRichProgress:
+    """
+    Context manager to pause the progress bar and clear the terminal line.
+    """
+
+    def __init__(self, progress: Progress) -> None:
+        self._progress = progress
+
+    def _clear_line(self) -> None:
+        UP = "\x1b[1A"
+        CLEAR = "\x1b[2K"
+        for _ in self._progress.tasks:
+            print(UP + CLEAR + UP)
+
+    def __enter__(self):
+        self._progress.stop()
+        self._clear_line()
+        return self._progress
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        self._progress.start()
 
 
 # endregion
