@@ -18,7 +18,7 @@ from rich.progress import (
 from typing_extensions import Self
 from youtube_transcript_api import YouTubeTranscriptApi, NoTranscriptFound
 
-from app.models import ICommandHandler
+from app.models import ICommandHandler, TranscriptionChunkData, TranscriptionResultData
 from app.utils import (
     FilePath,
     PauseRichProgress,
@@ -66,7 +66,7 @@ class _CommandParams(BaseModel):
     @property
     def output_file_path(self) -> FilePath:
         return FilePath(self.output_file)
-    
+
     @computed_field
     @property
     def include_transcript(self) -> bool:
@@ -77,7 +77,9 @@ class _CommandParams(BaseModel):
     def transcript_file_path(self) -> FilePath:
         """Transcript file path."""
         if not self.include_transcript:
-            raise ValueError("Transcript file path is not available because 'include_transcript' is False.")
+            raise ValueError(
+                "Transcript file path is not available because 'include_transcript' is False."
+            )
         return self.output_file_path.with_extension(".json")
 
     @model_validator(mode="after")
@@ -98,7 +100,7 @@ class _CommandParams(BaseModel):
             raise ValueError(
                 f"Invalid target resolution: '{self.target_resolution}'. Supported resolutions: {list_supported_resolutions()}"
             )
-        
+
         return self
 
 
@@ -322,10 +324,9 @@ class _YouTubeDownloadCommand:
                     description="[green]Media merged successfully",
                     visible=self.params.verbose,
                 )
-            
+
             # Download the transcript file
             self._execute_download_transcript(yt, progress)
-
 
     def _fetch_video(self) -> YouTube:
         """
@@ -424,77 +425,78 @@ class _YouTubeDownloadCommand:
         yt.register_on_complete_callback(on_complete_callback)
 
         return task
-    
+
     def _execute_download_transcript(self, yt: YouTube, progress: Progress) -> None:
         """Execute download of the transcript file with the video subtitles."""
         if not self.params.include_transcript:
             return
         if self.params.transcript_file_path.file_exists() and not self.params.confirm:
             with PauseRichProgress(progress):
-                replace_transcript = prompt.Confirm.ask(f"Transcript file already exists: '{self.params.transcript_file_path}'.\nDo you want to replace it?", default=True)
+                replace_transcript = prompt.Confirm.ask(
+                    f"Transcript file already exists: '{self.params.transcript_file_path}'.\nDo you want to replace it?",
+                    default=True,
+                )
             if not replace_transcript:
                 return
-        
+
         fetch_task = progress.add_task("[yellow]Downloading transcript...", total=None)
         self._download_transcript(yt)
         progress.update(
-            fetch_task, 
-            description="[green]Transcript download completed",
-            completed=1,
-            total=1
+            fetch_task, description="[green]Transcript download completed", completed=1, total=1
         )
 
     def _download_transcript(self, yt: YouTube) -> None:
         """Download the transcript file with the video subtitles."""
         if not self.params.transcript:
             return
-        
+
         available_transcripts = YouTubeTranscriptApi.list_transcripts(yt.video_id)
         if not available_transcripts:
             raise Exception("No transcript found for the video.")
-        
+
         available_language_codes = [
-            str(transcript.language_code).lower()
-            for transcript in available_transcripts
+            str(transcript.language_code).lower() for transcript in available_transcripts
         ]
         if self.params.transcript.lower() not in available_language_codes:
             raise ValueError(
                 f"Transcript not found for the video with language code '{self.params.transcript}'. Available language codes: {', '.join(available_language_codes)}."
             )
-        
+
         try:
             raw_transcript = YouTubeTranscriptApi.get_transcript(
-                yt.video_id,
-                languages=(self.params.transcript,)
+                yt.video_id, languages=(self.params.transcript,)
             )
         except NoTranscriptFound:
-            raise Exception("No transcript found for the video with language code '{self.params.transcript}'. Please try another language code.")
+            raise Exception(
+                "No transcript found for the video with language code '{self.params.transcript}'. Please try another language code."
+            )
 
         formatted_transcript = self._format_raw_transcript(raw_transcript)
         with open(self.params.transcript_file_path.full_path, "w", encoding="utf8") as file:
-            json.dump(formatted_transcript, file, ensure_ascii=False)
+            json.dump(formatted_transcript.model_dump(), file, ensure_ascii=False)
 
-    def _format_raw_transcript(self, raw_transcript: list[dict]) -> dict:
+    def _format_raw_transcript(self, raw_transcript: list[dict]) -> TranscriptionResultData:
         """
         Format the raw transcript data to standard format.
         """
         text = ""
-        chunks = []
+        chunks: list[TranscriptionChunkData] = []
         for item in raw_transcript:
             if "text" not in item:
                 continue
-            start = item["start"]
-            end = start + item["duration"]
             text += " " + item["text"]
-            chunks.append({
-                "timestamp": [start, end],
-                "text": item["text"],
-            })
-        return {
-            "speakers": [],
-            "chunks": chunks,
-            "text": text.strip(),
-        }
+            start_time = item["start"]
+            end_time = start_time + item["duration"]
+            chunk = TranscriptionChunkData(
+                text=item["text"],
+                timestamp=[start_time, end_time],
+            )
+            chunks.append(chunk)
+        return TranscriptionResultData(
+            speakers=[],
+            chunks=chunks,
+            text=text,
+        )
 
     def _merge_video_and_audio(self, video_file_path: str, audio_file_path: str):
         """Merge the video and audio files using ffmpeg."""
@@ -551,12 +553,13 @@ class YouTubeDownloadCommandHandler(ICommandHandler):
             "--transcript",
             default=None,
             type=str,
-            help="Include transcript file in the output folder (same name as the video file, but in JSON format) with the specified language code (eg. 'en')."
+            help="Include transcript file in the output folder (same name as the video file, but in JSON format) with the specified language code (eg. 'en').",
         )
         parser.add_argument(
-            "-y", "--confirm",
+            "-y",
+            "--confirm",
             action="store_true",
-            help="Confirm all prompts automatically (useful for automation)."
+            help="Confirm all prompts automatically (useful for automation).",
         )
         parser.add_argument(
             "--verbose", action="store_true", help="Print ffmpeg output (for debugging purposes)"
