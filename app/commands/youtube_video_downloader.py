@@ -1,10 +1,11 @@
+import json
 from pathlib import Path
 import subprocess
 import tempfile
 from typing import Literal
 from pydantic import BaseModel, ConfigDict, computed_field, model_validator
 from pytube import YouTube, StreamQuery, Stream, exceptions
-from rich import print as rprint
+from rich import print as rprint, prompt
 from rich.progress import (
     Progress,
     TimeElapsedColumn,
@@ -15,10 +16,12 @@ from rich.progress import (
     TaskID,
 )
 from typing_extensions import Self
+from youtube_transcript_api import YouTubeTranscriptApi, NoTranscriptFound
 
-from app.models import ICommandHandler
+from app.models import ICommandHandler, TranscriptionChunkData, TranscriptionResultData
 from app.utils import (
     FilePath,
+    PauseRichProgress,
     check_ffmpeg_installed,
     flatten_list,
     is_supported_extension,
@@ -50,6 +53,12 @@ class _CommandParams(BaseModel):
     target_resolution: str = "1080p"
     """Target resolution for the downloaded video."""
 
+    transcript: str | None = None
+    """Include transcript file in the output folder (same name as the video file, but in JSON format) with the specified language code (eg. 'en')."""
+
+    confirm: bool = False
+    """Confirm all prompts automatically (useful for automation)."""
+
     verbose: bool = False
     """Enable verbose mode."""
 
@@ -57,6 +66,21 @@ class _CommandParams(BaseModel):
     @property
     def output_file_path(self) -> FilePath:
         return FilePath(self.output_file)
+
+    @computed_field
+    @property
+    def include_transcript(self) -> bool:
+        return self.transcript is not None
+
+    @computed_field
+    @property
+    def transcript_file_path(self) -> FilePath:
+        """Transcript file path."""
+        if not self.include_transcript:
+            raise ValueError(
+                "Transcript file path is not available because 'include_transcript' is False."
+            )
+        return self.output_file_path.with_extension(".json")
 
     @model_validator(mode="after")
     def _validate_fields(self) -> Self:
@@ -177,6 +201,58 @@ class MediaStreams:
             output_path=str(output_path.directory_path),
             filename=output_path.full_name,
             skip_existing=False,  # Always download the audio stream
+        )
+
+
+class YouTubeTranscript:
+    """
+    YouTube transcript helper class.
+    """
+
+    def __init__(self, raw_transcript: list[dict], language_code: str):
+        self.raw_transcript = raw_transcript
+        """Raw transcript data."""
+
+        self.language_code = language_code
+        """Transcript language code."""
+
+    def format(self) -> TranscriptionResultData:
+        """
+        Format the raw transcript data to standard format.
+        """
+        text = ""
+        chunks: list[TranscriptionChunkData] = []
+        total_chunks = len(self.raw_transcript)
+        for i, current_item in enumerate(self.raw_transcript):
+            next_item = self.raw_transcript[i + 1] if i + 1 < total_chunks else None
+            chunk = self._format_chunk(current_item, next_item)            
+            text += " " + chunk.text
+            chunks.append(chunk)
+        return TranscriptionResultData(
+            speakers=[],
+            chunks=chunks,
+            text=text,
+        )
+    
+    def _format_chunk(self, current_item: dict, next_item: dict | None) -> TranscriptionChunkData:
+        """
+        Format a transcript chunk.
+
+        Remarks
+        ----
+        We assume that the start time of the next item is the end time of the current item,
+        because the YouTube transcript API duration overlaps with the next item duration
+        (when the next item starts, the current item is still being shown).
+        """
+
+        text = current_item["text"]
+        start_time = current_item["start"]
+        current_item_end_time = round(start_time + current_item["duration"], 3)
+        end_time = current_item_end_time if next_item is None else next_item["start"]
+
+        return TranscriptionChunkData(
+            text=text,
+            timestamp=[start_time, end_time],
         )
 
 
@@ -301,6 +377,9 @@ class _YouTubeDownloadCommand:
                     visible=self.params.verbose,
                 )
 
+            # Download the transcript file
+            self._execute_download_transcript(yt, progress)
+
     def _fetch_video(self) -> YouTube:
         """
         Fetch the video from the provided URL.
@@ -399,6 +478,58 @@ class _YouTubeDownloadCommand:
 
         return task
 
+    def _execute_download_transcript(self, yt: YouTube, progress: Progress) -> None:
+        """Execute download of the transcript file with the video subtitles."""
+        if not self.params.include_transcript:
+            return
+        if self.params.transcript_file_path.file_exists() and not self.params.confirm:
+            with PauseRichProgress(progress):
+                replace_transcript = prompt.Confirm.ask(
+                    f"Transcript file already exists: '{self.params.transcript_file_path}'.\nDo you want to replace it?",
+                    default=True,
+                )
+            if not replace_transcript:
+                return
+
+        fetch_task = progress.add_task("[yellow]Downloading transcript...", total=None)
+        self._download_transcript(yt)
+        progress.update(
+            fetch_task, description="[green]Transcript download completed", completed=1, total=1
+        )
+
+    def _download_transcript(self, yt: YouTube) -> None:
+        """Download the transcript file with the video subtitles."""
+        if not self.params.transcript:
+            return
+
+        available_transcripts = YouTubeTranscriptApi.list_transcripts(yt.video_id)
+        if not available_transcripts:
+            raise Exception("No transcript found for the video.")
+
+        available_language_codes = [
+            str(transcript.language_code).lower() for transcript in available_transcripts
+        ]
+        if self.params.transcript.lower() not in available_language_codes:
+            raise ValueError(
+                f"Transcript not found for the video with language code '{self.params.transcript}'. Available language codes: {', '.join(available_language_codes)}."
+            )
+
+        try:
+            raw_transcript = YouTubeTranscriptApi.get_transcript(
+                yt.video_id, languages=(self.params.transcript,)
+            )
+        except NoTranscriptFound:
+            raise Exception(
+                "No transcript found for the video with language code '{self.params.transcript}'. Please try another language code."
+            )
+
+        raw_transcript = YouTubeTranscript(
+            raw_transcript=raw_transcript, language_code=self.params.transcript
+        )        
+        formatted_transcript = raw_transcript.format()
+        with open(self.params.transcript_file_path.full_path, "w", encoding="utf8") as file:
+            json.dump(formatted_transcript.model_dump(), file, ensure_ascii=False)
+
     def _merge_video_and_audio(self, video_file_path: str, audio_file_path: str):
         """Merge the video and audio files using ffmpeg."""
 
@@ -451,6 +582,18 @@ class YouTubeDownloadCommandHandler(ICommandHandler):
             help=f"Target resolution for the downloaded video. Supported resolutions: {list_supported_resolutions()}",
         )
         parser.add_argument(
+            "--transcript",
+            default=None,
+            type=str,
+            help="Include transcript file in the output folder (same name as the video file, but in JSON format) with the specified language code (eg. 'en').",
+        )
+        parser.add_argument(
+            "-y",
+            "--confirm",
+            action="store_true",
+            help="Confirm all prompts automatically (useful for automation).",
+        )
+        parser.add_argument(
             "--verbose", action="store_true", help="Print ffmpeg output (for debugging purposes)"
         )
 
@@ -459,10 +602,14 @@ class YouTubeDownloadCommandHandler(ICommandHandler):
             input_url=args.video_url,
             output_file=args.output_file,
             target_resolution=args.resolution,
+            transcript=args.transcript,
+            confirm=args.confirm,
             verbose=args.verbose,
         )
         _YouTubeDownloadCommand(command_params).execute()
         rprint(f"[bold green]Video downloaded to '{command_params.output_file_path}'[/bold green]")
+        if command_params.include_transcript:
+            rprint(f"[bold green]Transcript downloaded to '{command_params.transcript_file_path}'[/bold green]")
 
 
 # endregion

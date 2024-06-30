@@ -14,10 +14,6 @@ A collection of CLI tools for audio and video processing.
 - Python 3.11 & Poetry
 - (Optional, only required for video conversion) [FFmpeg v7 full build](https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-full.7z) and add the bin folder to the PATH environment variable.
 
-## Description
-
-This project is an AI powered audio transcriber, which is based on the [insanely-fast-whisper](https://github.com/Vaibhavs10/insanely-fast-whisper) implementation.
-
 ## Installation
 
 > To use diarization feature, you must have a Hugging Face account and follow these steps:
@@ -74,6 +70,12 @@ Supported output formats:
 
 ```bash
 poetry run python cli.py youtube-download -u <youtube_video_url> -o <path_to_output_file>.mp4
+```
+
+To download the video transcript, add the `--transcript` argument with the language code (e.g. `en` for English).
+
+```bash
+poetry run python cli.py youtube-download -u <youtube_video_url> -o <path_to_output_file>.mp4 --transcript=<language_code>
 ```
 
 ## Packaging
