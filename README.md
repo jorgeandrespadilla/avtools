@@ -34,24 +34,10 @@ This project is an AI powered audio transcriber, which is based on the [insanely
 ### Transcribe
 
 ```bash
-poetry run python audio_transcriber.py --input <path_to_audio_file> --output <path_to_output_file>
+poetry run python audio_transcriber.py --i <path_to_audio_file>.mp3 --o <path_to_output_file>.json
 ```
 
 > To use diarization feature, add the `--hf-token` argument with the access token. We do not recommended to use this feature for large audio files.
-
-```bash
-
-To transcribe to a JSON format, use '.json' as the output file extension (recommended).
-
-```bash
-poetry run python audio_transcriber.py --input <path_to_audio_file> --output <path_to_output_file>.json
-```
-
-To transcribe to a text format, use '.txt' as the output file extension.
-
-```bash
-poetry run python audio_transcriber.py --input <path_to_audio_file> --output <path_to_output_file>.txt
-```
 
 ### Convert Video to Audio
 
