@@ -27,7 +27,7 @@ def main():
         input_file=args.input_file, output_file=args.output_file, verbose=args.verbose
     )
     transcript_formatter.execute(command_params)
-    rprint("[bold green]Transcript formatted successfully[/bold green]")
+    rprint(f"[bold green]Formatted transcript saved to '{command_params.output_file_path}'[/bold green]")
 
 
 if __name__ == "__main__":

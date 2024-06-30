@@ -7,7 +7,7 @@ from app.pipelines import transcription, diarization
 from app.utils import FilePath, is_supported_extension, is_url, list_extensions
 
 SUPPORTED_INPUT_EXTENSIONS = [".mp3", ".wav"]
-SUPPORTED_OUTPUT_EXTENSIONS = [".json", ".txt"]
+SUPPORTED_OUTPUT_EXTENSIONS = [".json"]
 
 
 # region Parameters
@@ -106,21 +106,6 @@ def _build_result(diarization_chunks: list, outputs) -> TranscriptionResultData:
     )
 
 
-# TODO: Deprecate this format and move it to the transcript formatter script.
-def _transcript_to_text(transcript: TranscriptionResultData) -> str:
-    """
-    Convert the transcription result to a text format.
-
-    Remarks
-    ----
-    - If speaker data is available, use the speaker format. Otherwise, use the chunk format.
-    """
-
-    if transcript.speakers:
-        return "\n\n".join([str(speaker) for speaker in transcript.speakers])
-    return "\n\n".join([str(chunk) for chunk in transcript.chunks])
-
-
 def execute(params: CommandParams) -> None:
     """Execute the audio transcription command."""
 
@@ -147,9 +132,5 @@ def execute(params: CommandParams) -> None:
     else:
         result = _build_result([], transcription_result)
 
-    if params.output_file_path.extension == ".txt":
-        with open(params.output_file_path.full_path, "w", encoding="utf8") as fp:
-            fp.write(_transcript_to_text(result.group_by_speaker()))
-    else:
-        with open(params.output_file_path.full_path, "w", encoding="utf8") as fp:
-            json.dump(result.model_dump(), fp, ensure_ascii=False)
+    with open(params.output_file_path.full_path, "w", encoding="utf8") as fp:
+        json.dump(result.model_dump(), fp, ensure_ascii=False)

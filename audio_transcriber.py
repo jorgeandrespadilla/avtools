@@ -5,6 +5,7 @@ from app.utils import (
     ArgumentHelpFormatter,
     get_env,
     handle_errors,
+    list_extensions,
 )
 from app.commands import audio_transcriber
 
@@ -29,7 +30,7 @@ def _parse_args():
         required=False,
         default="output.json",
         type=str,
-        help="Path to save the transcribed text. Path must exist and end with '.txt' for simplified output or '.json' for detailed output. If not provided, the output will be saved in the same directory as the input file (default: 'output.json').",
+        help=f"Path to save the transcription. If not provided, the output will be saved in the same directory as the input file. Format will be inferred from the file extension. Supported formats: {list_extensions(audio_transcriber.SUPPORTED_OUTPUT_EXTENSIONS)}.",
     )
     parser.add_argument(
         "--language",
