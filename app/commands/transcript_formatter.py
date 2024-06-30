@@ -1,92 +1,117 @@
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 import json
 from typing import Self
 
 from pydantic import BaseModel, ConfigDict, computed_field, model_validator
+from rich import print as rprint
 
-from app.utils import FilePath, is_supported_extension, list_extensions
+from app.models import ICommandHandler, TranscriptionChunkData, TranscriptionResultData
+from app.utils import FilePath, format_duration, is_supported_extension, list_extensions
 
 
-class IFormatter:
+# region Formatters
+
+
+class IFormatter(ABC):
+    """Interface for transcript formatters."""
+
     @abstractmethod
-    def preamble(self) -> str:
-        pass
-
-    @abstractmethod
-    def format_chunk(self, chunk: dict, index) -> str:
+    def format(self, data: TranscriptionResultData, verbose: bool = False) -> str:
+        """Format the transcription data."""
         pass
 
 
 class TxtFormatter(IFormatter):
-    @classmethod
-    def preamble(cls):
-        return ""
+    """
+    Convert the transcription to a TXT format.
 
-    @classmethod
-    def format_chunk(cls, chunk, index):
-        text = chunk["text"]
-        return f"{text}\n"
+    Remarks
+    ----
+    - If speaker data is available, use the speaker format. Otherwise, use the chunk format.
+    """
+
+    def format(self, data, verbose=False):
+        chunks = data.speakers if data.speakers else data.chunks
+
+        if verbose:
+            rprint("Speaker data available.") if data.speakers else rprint(
+                "No speaker data available, using chunk data."
+            )
+
+        string = ""
+        for chunk in chunks:
+            entry = f"{chunk}\n\n"
+            string += entry
+            if verbose:
+                rprint(entry)
+        return string
 
 
 class SrtFormatter(IFormatter):
-    @classmethod
-    def preamble(cls):
-        return ""
+    """Convert the transcription to a SRT format."""
 
-    @classmethod
-    def format_chunk(cls, chunk, index):
-        text = chunk["text"]
-        start, end = chunk["timestamp"][0], chunk["timestamp"][1]
-        start_format, end_format = cls._format_seconds(start), cls._format_seconds(end)
-        return f"{index}\n{start_format} --> {end_format}\n{text}\n\n"
+    def format(self, data, verbose=False):
+        string = ""
+        for index, chunk in enumerate(data.chunks, 1):
+            entry = self._format_chunk(chunk, index)
+            string += entry
+            if verbose:
+                rprint(entry)
+        return string
 
-    @classmethod
-    def _format_seconds(cls, seconds):
-        whole_seconds = int(seconds)
-        milliseconds = int((seconds - whole_seconds) * 1000)
+    def _format_chunk(self, chunk: TranscriptionChunkData, index: int) -> str:
+        start_format = self._format_seconds(chunk.start_time)
+        end_format = self._format_seconds(chunk.end_time)
+        return f"{index}\n{start_format} --> {end_format}\n{chunk.text}\n\n"
 
-        hours = whole_seconds // 3600
-        minutes = (whole_seconds % 3600) // 60
-        seconds = whole_seconds % 60
-
-        return f"{hours:02d}:{minutes:02d}:{seconds:02d},{milliseconds:03d}"
+    def _format_seconds(self, seconds: float) -> str:
+        return format_duration(seconds, include_milliseconds=True, milliseconds_separator=",")
 
 
 class VttFormatter(IFormatter):
-    @classmethod
-    def preamble(cls):
-        return "WEBVTT\n\n"
+    """Convert the transcription to a VTT format."""
 
-    @classmethod
-    def format_chunk(cls, chunk, index):
-        text = chunk["text"]
-        start, end = chunk["timestamp"][0], chunk["timestamp"][1]
-        start_format, end_format = cls._format_seconds(start), cls._format_seconds(end)
-        return f"{index}\n{start_format} --> {end_format}\n{text}\n\n"
+    def format(self, data, verbose=False):
+        string = "WEBVTT\n\n"
+        for index, chunk in enumerate(data.chunks, 1):
+            entry = self._format_chunk(chunk, index)
+            string += entry
+            if verbose:
+                rprint(entry)
+        return string
 
-    @classmethod
-    def _format_seconds(cls, seconds):
-        whole_seconds = int(seconds)
-        milliseconds = int((seconds - whole_seconds) * 1000)
+    def _format_chunk(self, chunk: TranscriptionChunkData, index: int) -> str:
+        start_format = self._format_seconds(chunk.start_time)
+        end_format = self._format_seconds(chunk.end_time)
+        return f"{index}\n{start_format} --> {end_format}\n{chunk.text}\n\n"
 
-        hours = whole_seconds // 3600
-        minutes = (whole_seconds % 3600) // 60
-        seconds = whole_seconds % 60
-
-        return f"{hours:02d}:{minutes:02d}:{seconds:02d}.{milliseconds:03d}"
+    def _format_seconds(self, seconds: float) -> str:
+        return format_duration(seconds, include_milliseconds=True, milliseconds_separator=".")
 
 
 TRANSCRIPT_FORMATTERS = {
-    ".srt": SrtFormatter,
-    ".txt": TxtFormatter,
-    ".vtt": VttFormatter,
+    ".srt": SrtFormatter(),
+    ".txt": TxtFormatter(),
+    ".vtt": VttFormatter(),
 }
+
+# endregion
+
+
+# region Constants
+
 
 SUPPORTED_INPUT_EXTENSIONS = [".json"]
 SUPPORTED_OUTPUT_EXTENSIONS = list(TRANSCRIPT_FORMATTERS.keys())
 
 
-class CommandParams(BaseModel):
+# endregion
+
+
+# region Parameters
+
+
+class _CommandParams(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     input_file: str
@@ -97,6 +122,10 @@ class CommandParams(BaseModel):
 
     verbose: bool = False
     """Enable verbose mode."""
+
+    # Additional parameters
+    group_by_speaker: bool = True
+    """Group the transcript by speaker (only applicable for TXT format if speaker data is available)."""
 
     @computed_field
     @property
@@ -128,22 +157,60 @@ class CommandParams(BaseModel):
         return self
 
 
-def execute(params: CommandParams):
+# endregion
+
+
+# region Command
+
+
+class _FormatterCommand:
     """Convert transcript in JSON format to a subtitle file or plain text."""
 
-    with open(params.input_file_path.full_path, "r", encoding="utf-8") as file:
-        data = json.load(file)
+    def __init__(self, params: _CommandParams):
+        self.params = params
 
-    formatter_class: IFormatter = TRANSCRIPT_FORMATTERS[params.output_file_path.extension]
+    def execute(self) -> None:
+        with open(self.params.input_file_path.full_path, "r", encoding="utf-8") as file:
+            data = TranscriptionResultData.model_validate(json.load(file))
 
-    string = formatter_class.preamble()
-    for index, chunk in enumerate(data["chunks"], 1):
-        entry = formatter_class.format_chunk(chunk, index)
+        if self.params.group_by_speaker:
+            data = data.group_by_speaker()
 
-        if params.verbose:
-            print(entry)
+        formatter_class: IFormatter = TRANSCRIPT_FORMATTERS[self.params.output_file_path.extension]
+        formatted_transcription = formatter_class.format(data, self.params.verbose)
 
-        string += entry
+        with open(self.params.output_file_path.full_path, "w", encoding="utf-8") as file:
+            file.write(formatted_transcription)
 
-    with open(params.output_file_path.full_path, "w", encoding="utf-8") as file:
-        file.write(string)
+
+# endregion
+
+
+# region Handler
+
+
+class FormatterCommandHandler(ICommandHandler):
+    def __init__(self):
+        self.name = "format"
+        self.description = "Convert transcript in JSON format to a subtitle file or plain text."
+
+    def configure_args(self, parser):
+        parser.add_argument("-i", "--input_file", required=True, help="Input JSON file path")
+        parser.add_argument(
+            "-o",
+            "--output_file",
+            help=f"File where the output will be saved. Format will be inferred from the file extension. Supported formats: {list_extensions(SUPPORTED_OUTPUT_EXTENSIONS)}.",
+        )
+        parser.add_argument("--verbose", action="store_true", help="Print each entry as it's added")
+
+    def run(self, args) -> None:
+        command_params = _CommandParams(
+            input_file=args.input_file, output_file=args.output_file, verbose=args.verbose
+        )
+        _FormatterCommand(command_params).execute()
+        rprint(
+            f"[bold green]Formatted transcript saved to '{command_params.output_file_path}'[/bold green]"
+        )
+
+
+# endregion

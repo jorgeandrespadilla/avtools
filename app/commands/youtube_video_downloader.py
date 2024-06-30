@@ -5,7 +5,7 @@ import tempfile
 from typing import Literal
 from pydantic import BaseModel, ConfigDict, computed_field, model_validator
 from pytube import YouTube, StreamQuery, Stream, exceptions
-from rich import print as printr, prompt
+from rich import print as rprint, prompt
 from rich.progress import (
     Progress,
     TimeElapsedColumn,
@@ -13,18 +13,35 @@ from rich.progress import (
     SpinnerColumn,
     TextColumn,
     TaskProgressColumn,
-    TaskID
+    TaskID,
 )
 from typing_extensions import Self
 from youtube_transcript_api import YouTubeTranscriptApi, NoTranscriptFound
 
-from app.utils import FilePath, PauseRichProgress, check_ffmpeg_installed, flatten_list, is_supported_extension, is_url, list_extensions
+from app.models import ICommandHandler
+from app.utils import (
+    FilePath,
+    PauseRichProgress,
+    check_ffmpeg_installed,
+    flatten_list,
+    is_supported_extension,
+    is_url,
+    list_extensions,
+)
+
+
+# region Constants
 
 SUPPORTED_OUTPUT_EXTENSIONS = [".mp4"]
 SUPPORTED_RESOLUTIONS = ["360p", "480p", "720p", "1080p", "1440p"]
 
+# endregion
 
-class CommandParams(BaseModel):
+
+# region Parameters
+
+
+class _CommandParams(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     input_url: str
@@ -85,6 +102,12 @@ class CommandParams(BaseModel):
         return self
 
 
+# endregion
+
+
+# region Utility Functions
+
+
 def _sort_resolutions(resolutions: list[str]) -> list[str]:
     """Sort the resolutions by quality (ascending order)."""
     return sorted(resolutions, key=lambda x: int(x[:-1]))
@@ -105,6 +128,12 @@ def _get_available_resolutions(streams: StreamQuery) -> list[str]:
     video_streams = streams.filter(type="video")
     available_resolutions = list(set([stream.resolution for stream in video_streams]))
     return _sort_resolutions(available_resolutions)
+
+
+# endregion
+
+
+# region Data + Helper Classes
 
 
 class MediaStreams:
@@ -128,20 +157,20 @@ class MediaStreams:
     def stream_type(self) -> Literal["progressive", "adaptive"]:
         """Return the type of the video stream."""
         return "progressive" if self.video.is_progressive else "adaptive"
-    
+
     def has_audio(self) -> bool:
         """
         Check if the video stream has an audio stream.
         We assume that any progressive stream has audio (even if the video has no audio).
         """
-        if self.video.is_progressive: # Video + audio in a single file
+        if self.video.is_progressive:  # Video + audio in a single file
             return True
         return self.audio is not None
-    
+
     def download_video(self, output_path: FilePath) -> str:
         """
         Download the video stream.
-        
+
         Parameters:
         - output_path: Output file path.
 
@@ -151,13 +180,13 @@ class MediaStreams:
         return self.video.download(
             output_path=str(output_path.directory_path),
             filename=output_path.full_name,
-            skip_existing=False, # Always download the video stream
+            skip_existing=False,  # Always download the video stream
         )
-    
+
     def download_audio(self, output_path: FilePath) -> str:
         """
         Download the audio stream.
-        
+
         Parameters:
         - output_path: Output file path.
 
@@ -169,13 +198,22 @@ class MediaStreams:
         return self.audio.download(
             output_path=str(output_path.directory_path),
             filename=output_path.full_name,
-            skip_existing=False, # Always download the audio stream
+            skip_existing=False,  # Always download the audio stream
         )
 
 
-class DownloadCommand:
+# endregion
+
+
+# region Command
+
+
+class _YouTubeDownloadCommand:
     """
     Download a YouTube video.
+
+    Remarks:
+    - The video is downloaded with the highest audio quality available.
     """
 
     """
@@ -200,7 +238,7 @@ class DownloadCommand:
     5. [CLEANUP] Remove the temporary files (video and audio). Handle errors to ensure the cleanup is always executed. [END OF PROCESS]
     """
 
-    def __init__(self, params: CommandParams):
+    def __init__(self, params: _CommandParams):
         self.params = params
 
     def execute(self) -> None:
@@ -223,33 +261,55 @@ class DownloadCommand:
             yt = self._fetch_video()
             media_streams = self._select_streams(yt)
             if not media_streams.has_audio():
-                printr("No audio stream found. The video will be downloaded without audio.")
+                rprint("No audio stream found. The video will be downloaded without audio.")
             progress.update(
-                fetch_task, 
-                description="[green]Video fetched successfully", 
+                fetch_task,
+                description="[green]Video fetched successfully",
                 completed=1,
                 total=1,
-                visible=self.params.verbose
+                visible=self.params.verbose,
             )
 
             # Show video information
-            printr(f"[bold]Title:[/bold] '{yt.title}'")
-            printr(f"[bold]Channel:[/bold] '{yt.author}'")
+            rprint(f"[bold]Title:[/bold] '{yt.title}'")
+            rprint(f"[bold]Channel:[/bold] '{yt.author}'")
 
             # Download the video and audio streams
             if not media_streams.audio:
                 # Download video only and save to the output file path
-                self._register_progress_callbacks(yt, progress, media_streams.video.filesize, "[yellow]Downloading video...", "[green]Video download completed")
+                self._register_progress_callbacks(
+                    yt,
+                    progress,
+                    media_streams.video.filesize,
+                    "[yellow]Downloading video...",
+                    "[green]Video download completed",
+                )
                 media_streams.download_video(self.params.output_file_path)
                 return
 
             with tempfile.TemporaryDirectory() as temp_dir:
                 # Download video and audio streams to temporary files
-                self._register_progress_callbacks(yt, progress, media_streams.video.filesize, "[yellow]Downloading video...", "[green]Video download completed")
-                temp_video_path = media_streams.download_video(FilePath(Path(temp_dir) / "video.mp4"))
-                
-                self._register_progress_callbacks(yt, progress, media_streams.audio.filesize, "[yellow]Downloading audio...", "[green]Audio download completed")
-                temp_audio_path = media_streams.download_audio(FilePath(Path(temp_dir) / "audio.mp4"))
+                self._register_progress_callbacks(
+                    yt,
+                    progress,
+                    media_streams.video.filesize,
+                    "[yellow]Downloading video...",
+                    "[green]Video download completed",
+                )
+                temp_video_path = media_streams.download_video(
+                    FilePath(Path(temp_dir) / "video.mp4")
+                )
+
+                self._register_progress_callbacks(
+                    yt,
+                    progress,
+                    media_streams.audio.filesize,
+                    "[yellow]Downloading audio...",
+                    "[green]Audio download completed",
+                )
+                temp_audio_path = media_streams.download_audio(
+                    FilePath(Path(temp_dir) / "audio.mp4")
+                )
 
                 # Merge video and audio files
                 merge_task = progress.add_task("[yellow]Merging video and audio...", total=None)
@@ -268,8 +328,8 @@ class DownloadCommand:
 
 
     def _fetch_video(self) -> YouTube:
-        """	
-        Fetch the video from the provided URL.	
+        """
+        Fetch the video from the provided URL.
         """
         try:
             yt = YouTube(self.params.input_url)
@@ -316,10 +376,12 @@ class DownloadCommand:
             )
         # Check if only progressive streams are available
         only_progressive = all([stream.is_progressive for stream in video_streams])
-        if only_progressive: # Video + audio in a single file
+        if only_progressive:  # Video + audio in a single file
             video_stream = video_streams.first()
             if not video_stream:
-                raise ValueError("Failed to find a progressive video stream (this should not happen).")
+                raise ValueError(
+                    "Failed to find a progressive video stream (this should not happen)."
+                )
             return MediaStreams(video=video_stream, audio=None)
         # Find the first adaptive video stream
         video_stream = video_streams.filter(adaptive=True).first()
@@ -327,15 +389,11 @@ class DownloadCommand:
             raise ValueError("Failed to find an adaptive video stream (this should not happen).")
 
         # Find the audio stream with the highest quality
-        audio_stream = streams \
-            .filter(only_audio=True) \
-            .order_by("abr") \
-            .desc() \
-            .first()
+        audio_stream = streams.filter(only_audio=True).order_by("abr").desc().first()
         if not audio_stream:
             return MediaStreams(video=video_stream, audio=None)
         return MediaStreams(video=video_stream, audio=audio_stream)
-    
+
     def _register_progress_callbacks(
         self,
         yt: YouTube,
@@ -354,13 +412,15 @@ class DownloadCommand:
         task = progress.add_task(progress_message, total=download_filesize)
 
         def on_progress_callback(stream: Stream, _chunk, bytes_remaining: int):
-            # printr("file_size: ", stream.filesize, "bytes_remaining: ", bytes_remaining)
+            # rprint("file_size: ", stream.filesize, "bytes_remaining: ", bytes_remaining)
             current_progress = stream.filesize - bytes_remaining
             progress.update(task, completed=current_progress)
+
         yt.register_on_progress_callback(on_progress_callback)
 
         def on_complete_callback(stream: Stream, _file_handle):
             progress.update(task, completed=stream.filesize, description=completed_message)
+
         yt.register_on_complete_callback(on_complete_callback)
 
         return task
@@ -439,32 +499,80 @@ class DownloadCommand:
     def _merge_video_and_audio(self, video_file_path: str, audio_file_path: str):
         """Merge the video and audio files using ffmpeg."""
 
-        command_args = flatten_list([
-            ("-i", video_file_path),  # Input video file
-            ("-i", audio_file_path),  # Input audio file
-            ("-map", "0:v"),  # Video stream from the first input file (video)
-            ("-map", "1:a"),  # Audio stream from the second input file (audio)
-            ("-c:v", "copy"),  # Copy video codec
-            ("-c:a", "aac"),  # AAC audio codec
-            ("-filter:a", "loudnorm"), # Normalize the audio volume
-            "-y",  # Overwrite output file without asking for confirmation (if it exists)
-            str(self.params.output_file_path.full_path),  # Output file
-        ])
+        command_args = flatten_list(
+            [
+                ("-i", video_file_path),  # Input video file
+                ("-i", audio_file_path),  # Input audio file
+                ("-map", "0:v"),  # Video stream from the first input file (video)
+                ("-map", "1:a"),  # Audio stream from the second input file (audio)
+                ("-c:v", "copy"),  # Copy video codec
+                ("-c:a", "aac"),  # AAC audio codec
+                ("-filter:a", "loudnorm"),  # Normalize the audio volume
+                "-y",  # Overwrite output file without asking for confirmation (if it exists)
+                str(self.params.output_file_path.full_path),  # Output file
+            ]
+        )
         output = subprocess.run(["ffmpeg", *command_args], capture_output=True)
 
         if self.params.verbose:
-            printr(output.stdout.decode("utf-8") or output.stderr.decode("utf-8"))
+            rprint(output.stdout.decode("utf-8") or output.stderr.decode("utf-8"))
         if output.returncode != 0:
             raise Exception(
                 "An error occurred while merging the video and audio files. Please enable verbose mode to check the ffmpeg output for more details."
             )
 
 
-def execute(params: CommandParams) -> None:
-    """
-    Download a YouTube video.
+# endregion
 
-    Remarks:
-    - The video is downloaded with the highest audio quality available.
-    """
-    DownloadCommand(params).execute()
+
+# region Handler
+
+
+class YouTubeDownloadCommandHandler(ICommandHandler):
+    def __init__(self):
+        self.name = "youtube-download"
+        self.description = "Download a YouTube video."
+
+    def configure_args(self, parser):
+        parser.add_argument(
+            "-u", "--video_url", required=True, type=str, help="Input YouTube video URL."
+        )
+        parser.add_argument(
+            "-o", "--output_file", default="output.mp4", type=str, help="Output video file path."
+        )
+        parser.add_argument(
+            "-r",
+            "--resolution",
+            default="1080p",
+            type=str,
+            help=f"Target resolution for the downloaded video. Supported resolutions: {list_supported_resolutions()}",
+        )
+        parser.add_argument(
+            "--transcript",
+            default=None,
+            type=str,
+            help="Include transcript file in the output folder (same name as the video file, but in JSON format) with the specified language code (eg. 'en')."
+        )
+        parser.add_argument(
+            "-y", "--confirm",
+            action="store_true",
+            help="Confirm all prompts automatically (useful for automation)."
+        )
+        parser.add_argument(
+            "--verbose", action="store_true", help="Print ffmpeg output (for debugging purposes)"
+        )
+
+    def run(self, args) -> None:
+        command_params = _CommandParams(
+            input_url=args.video_url,
+            output_file=args.output_file,
+            target_resolution=args.resolution,
+            transcript=args.transcript,
+            confirm=args.confirm,
+            verbose=args.verbose,
+        )
+        _YouTubeDownloadCommand(command_params).execute()
+        rprint(f"[bold green]Video downloaded to '{command_params.output_file_path}'[/bold green]")
+
+
+# endregion

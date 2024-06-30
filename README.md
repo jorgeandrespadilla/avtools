@@ -31,32 +31,28 @@ This project is an AI powered audio transcriber, which is based on the [insanely
 
 ## Usage
 
+```bash
+poetry run python cli.py
+```
+
+For more information on the available commands, use the `--help` argument:
+
+```bash
+poetry run python cli.py --help
+```
+
 ### Transcribe
 
 ```bash
-poetry run python audio_transcriber.py --input <path_to_audio_file> --output <path_to_output_file>
+poetry run python cli.py transcribe --i <path_to_audio_file>.mp3 --o <path_to_output_file>.json
 ```
 
 > To use diarization feature, add the `--hf-token` argument with the access token. We do not recommended to use this feature for large audio files.
 
-```bash
-
-To transcribe to a JSON format, use '.json' as the output file extension (recommended).
-
-```bash
-poetry run python audio_transcriber.py --input <path_to_audio_file> --output <path_to_output_file>.json
-```
-
-To transcribe to a text format, use '.txt' as the output file extension.
-
-```bash
-poetry run python audio_transcriber.py --input <path_to_audio_file> --output <path_to_output_file>.txt
-```
-
 ### Convert Video to Audio
 
 ```bash
-poetry run python video_to_audio_converter.py -i <path_to_input_video_file>.mp4 -o <path_to_output_audio_file>.mp3
+poetry run python cli.py video-audio -i <path_to_input_video_file>.mp4 -o <path_to_output_audio_file>.mp3
 ```
 
 ### Convert Transcripts to Different Formats
@@ -66,7 +62,7 @@ poetry run python video_to_audio_converter.py -i <path_to_input_video_file>.mp4 
 To convert a JSON transcript to a subtitle file or plain text file, use the following command:
 
 ```bash
-poetry run python transcript_formatter.py -i <path_to_input_json_file>.json -o <path_to_output_file>.vtt
+poetry run python cli.py format --i <path_to_input_json_file>.json --o <path_to_output_file>.srt
 ```
 
 Supported output formats:
@@ -77,19 +73,13 @@ Supported output formats:
 ### Download YouTube Video
 
 ```bash
-poetry run python youtube_video_downloader.py -u <youtube_video_url> -o <path_to_output_file>.mp4
+poetry run python cli.py youtube-download -u <youtube_video_url> -o <path_to_output_file>.mp4
 ```
 
 To download the video transcript, add the `--transcript` argument with the language code (e.g. `en` for English).
 
 ```bash
-poetry run python youtube_video_downloader.py -u <youtube_video_url> -o <path_to_output_file>.mp4 --transcript=<language_code>
-```
-
-For more information on the available options, run the following command:
-
-```bash
-poetry run python youtube_video_downloader.py --help
+poetry run python cli.py youtube-download -u <youtube_video_url> -o <path_to_output_file>.mp4 --transcript=<language_code>
 ```
 
 ## Additional Information
