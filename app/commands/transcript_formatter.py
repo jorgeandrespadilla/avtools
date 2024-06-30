@@ -1,89 +1,76 @@
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 import json
 from typing import Self
 
 from pydantic import BaseModel, ConfigDict, computed_field, model_validator
 
-from app.utils import FilePath, is_supported_extension, list_extensions
+from app.models import TranscriptionChunkData, TranscriptionResultData
+from app.utils import FilePath, format_duration, is_supported_extension, list_extensions
 
 
-class IFormatter:
+# region Formatters
+
+
+class IFormatter(ABC):
+    """Interface for transcript formatters."""
+
     @abstractmethod
     def preamble(self) -> str:
         pass
 
     @abstractmethod
-    def format_chunk(self, chunk: dict, index) -> str:
+    def format_chunk(self, chunk: TranscriptionChunkData, index: int) -> str:
         pass
 
 
 class TxtFormatter(IFormatter):
-    @classmethod
-    def preamble(cls):
+    def preamble(self):
         return ""
 
-    @classmethod
-    def format_chunk(cls, chunk, index):
-        text = chunk["text"]
-        return f"{text}\n"
+    def format_chunk(self, chunk, index):
+        return f"{chunk.text}\n"
 
 
 class SrtFormatter(IFormatter):
-    @classmethod
-    def preamble(cls):
+    def preamble(self):
         return ""
 
-    @classmethod
-    def format_chunk(cls, chunk, index):
-        text = chunk["text"]
-        start, end = chunk["timestamp"][0], chunk["timestamp"][1]
-        start_format, end_format = cls._format_seconds(start), cls._format_seconds(end)
-        return f"{index}\n{start_format} --> {end_format}\n{text}\n\n"
+    def format_chunk(self, chunk, index):
+        start_format = self._format_seconds(chunk.start_time)
+        end_format = self._format_seconds(chunk.end_time)
+        return f"{index}\n{start_format} --> {end_format}\n{chunk.text}\n\n"
 
-    @classmethod
-    def _format_seconds(cls, seconds):
-        whole_seconds = int(seconds)
-        milliseconds = int((seconds - whole_seconds) * 1000)
-
-        hours = whole_seconds // 3600
-        minutes = (whole_seconds % 3600) // 60
-        seconds = whole_seconds % 60
-
-        return f"{hours:02d}:{minutes:02d}:{seconds:02d},{milliseconds:03d}"
+    def _format_seconds(self, seconds: float):
+        return format_duration(seconds, include_milliseconds=True, milliseconds_separator=",")
 
 
 class VttFormatter(IFormatter):
-    @classmethod
-    def preamble(cls):
+    def preamble(self):
         return "WEBVTT\n\n"
 
-    @classmethod
-    def format_chunk(cls, chunk, index):
-        text = chunk["text"]
-        start, end = chunk["timestamp"][0], chunk["timestamp"][1]
-        start_format, end_format = cls._format_seconds(start), cls._format_seconds(end)
-        return f"{index}\n{start_format} --> {end_format}\n{text}\n\n"
+    def format_chunk(self, chunk, index):
+        start_format = self._format_seconds(chunk.start_time)
+        end_format = self._format_seconds(chunk.end_time)
+        return f"{index}\n{start_format} --> {end_format}\n{chunk.text}\n\n"
 
-    @classmethod
-    def _format_seconds(cls, seconds):
-        whole_seconds = int(seconds)
-        milliseconds = int((seconds - whole_seconds) * 1000)
-
-        hours = whole_seconds // 3600
-        minutes = (whole_seconds % 3600) // 60
-        seconds = whole_seconds % 60
-
-        return f"{hours:02d}:{minutes:02d}:{seconds:02d}.{milliseconds:03d}"
+    def _format_seconds(self, seconds: float):
+        return format_duration(seconds, include_milliseconds=True, milliseconds_separator=".")
 
 
 TRANSCRIPT_FORMATTERS = {
-    ".srt": SrtFormatter,
-    ".txt": TxtFormatter,
-    ".vtt": VttFormatter,
+    ".srt": SrtFormatter(),
+    ".txt": TxtFormatter(),
+    ".vtt": VttFormatter(),
 }
+
+# endregion
+
 
 SUPPORTED_INPUT_EXTENSIONS = [".json"]
 SUPPORTED_OUTPUT_EXTENSIONS = list(TRANSCRIPT_FORMATTERS.keys())
+
+
+# region Parameters
 
 
 class CommandParams(BaseModel):
@@ -128,16 +115,20 @@ class CommandParams(BaseModel):
         return self
 
 
+# endregion
+
+
 def execute(params: CommandParams):
     """Convert transcript in JSON format to a subtitle file or plain text."""
 
     with open(params.input_file_path.full_path, "r", encoding="utf-8") as file:
-        data = json.load(file)
+        raw_data = json.load(file)
+        data = TranscriptionResultData.model_validate(raw_data)
 
     formatter_class: IFormatter = TRANSCRIPT_FORMATTERS[params.output_file_path.extension]
 
     string = formatter_class.preamble()
-    for index, chunk in enumerate(data["chunks"], 1):
+    for index, chunk in enumerate(data.chunks, 1):
         entry = formatter_class.format_chunk(chunk, index)
 
         if params.verbose:

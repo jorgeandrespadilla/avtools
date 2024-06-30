@@ -72,20 +72,29 @@ def check_ffmpeg_installed():
         )
 
 
-def format_duration(seconds: float, show_milliseconds: bool = False) -> str:
-    """Format the duration in seconds to a human-readable string (HH:MM:SS.mmm)."""
+def format_duration(
+    duration: float,
+    include_milliseconds: bool = False,
+    milliseconds_separator: str = ".",
+) -> str:
+    """
+    Format the duration in seconds to a human-readable string (HH:MM:SS). 
+    If `include_milliseconds` is True, it will include milliseconds with the provided separator.
+    """
 
-    if seconds < 0:
+    if duration < 0:
         raise ValueError("Duration must be a positive number.")
 
-    hours = int(seconds // 3600)
-    minutes = int((seconds % 3600) // 60)
-    secs = seconds % 60
+    whole_seconds = int(duration)
+    hours = whole_seconds // 3600
+    minutes = (duration % 3600) // 60
+    seconds = duration % 60
 
-    formatted_time = f"{hours:02}:{minutes:02}:{int(secs):02}"
-    if show_milliseconds:
-        milliseconds = int((secs - int(secs)) * 1000)
-        formatted_time += f".{milliseconds:03}"
+    formatted_time = f"{hours:02}:{minutes:02}:{int(seconds):02}"
+
+    if include_milliseconds:
+        milliseconds = int((duration - whole_seconds) * 1000)
+        formatted_time += f"{milliseconds_separator}{milliseconds:03}"
 
     return formatted_time
   
