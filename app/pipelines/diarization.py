@@ -1,15 +1,25 @@
 import sys
 from typing import Any
+from pydantic import BaseModel
 import requests
 import torch
 import numpy as np
 from pyannote.audio import Pipeline
 from torchaudio import functional as F
 from transformers.pipelines.audio_utils import ffmpeg_read
-from rich.progress import Progress, TimeElapsedColumn, BarColumn, TextColumn
+from rich.progress import Progress, TimeElapsedColumn, BarColumn, TextColumn, SpinnerColumn
 
-from app.models import DiarizationPipelineParams
 from app.utils import is_url
+
+
+class PipelineParams(BaseModel):
+    input_file: str
+    hf_token: str
+    device_id: str
+    diarization_model: str = "pyannote/speaker-diarization-3.1"
+    num_speakers: int | None = None
+    min_speakers: int | None = None
+    max_speakers: int | None = None
 
 
 def preprocess_inputs(inputs):
@@ -42,17 +52,12 @@ def preprocess_inputs(inputs):
         in_sampling_rate = inputs.pop("sampling_rate")
         inputs = _inputs
         if in_sampling_rate != 16000:
-            inputs = F.resample(
-                torch.from_numpy(inputs), in_sampling_rate, 16000
-            ).numpy()
+            inputs = F.resample(torch.from_numpy(inputs), in_sampling_rate, 16000).numpy()
 
     if not isinstance(inputs, np.ndarray):
-        raise ValueError(
-            f"We expect a numpy ndarray as input, got `{type(inputs)}`")
+        raise ValueError(f"We expect a numpy ndarray as input, got `{type(inputs)}`")
     if len(inputs.shape) != 1:
-        raise ValueError(
-            "We expect a single channel audio input for ASRDiarizePipeline"
-        )
+        raise ValueError("We expect a single channel audio input for ASRDiarizePipeline")
 
     # diarization model expects float32 torch tensor of shape `(channels, seq_len)`
     diarizer_inputs = torch.from_numpy(inputs).float()
@@ -118,7 +123,11 @@ def diarize_audio(diarizer_inputs, diarization_pipeline, num_speakers, min_speak
 def post_process_segments_and_transcripts(new_segments, transcript, group_by_speaker) -> list:
     # get the end timestamps for each chunk from the ASR output
     end_timestamps = np.array(
-        [chunk["timestamp"][-1] if chunk["timestamp"][-1] is not None else sys.float_info.max for chunk in transcript])
+        [
+            chunk["timestamp"][-1] if chunk["timestamp"][-1] is not None else sys.float_info.max
+            for chunk in transcript
+        ]
+    )
     segmented_preds = []
 
     # align the diarizer timestamps and the ASR timestamps
@@ -132,9 +141,7 @@ def post_process_segments_and_transcripts(new_segments, transcript, group_by_spe
             segmented_preds.append(
                 {
                     "speaker": segment["speaker"],
-                    "text": "".join(
-                        [chunk["text"] for chunk in transcript[: upto_idx + 1]]
-                    ),
+                    "text": "".join([chunk["text"] for chunk in transcript[: upto_idx + 1]]),
                     "timestamp": (
                         transcript[0]["timestamp"][0],
                         transcript[upto_idx]["timestamp"][1],
@@ -143,12 +150,11 @@ def post_process_segments_and_transcripts(new_segments, transcript, group_by_spe
             )
         else:
             for i in range(upto_idx + 1):
-                segmented_preds.append(
-                    {"speaker": segment["speaker"], **transcript[i]})
+                segmented_preds.append({"speaker": segment["speaker"], **transcript[i]})
 
         # crop the transcripts and timestamp lists according to the latest timestamp (for faster argmin)
-        transcript = transcript[upto_idx + 1:]
-        end_timestamps = end_timestamps[upto_idx + 1:]
+        transcript = transcript[upto_idx + 1 :]
+        end_timestamps = end_timestamps[upto_idx + 1 :]
 
         if len(end_timestamps) == 0:
             break
@@ -156,19 +162,18 @@ def post_process_segments_and_transcripts(new_segments, transcript, group_by_spe
     return segmented_preds
 
 
-def run(config: DiarizationPipelineParams, outputs: Any):
+def run(config: PipelineParams, outputs: Any):
     diarization_pipeline = Pipeline.from_pretrained(
         checkpoint_path=config.diarization_model,
         use_auth_token=config.hf_token,
     )
-    diarization_pipeline.to(
-        torch.device(config.device_id)
-    )
+    diarization_pipeline.to(torch.device(config.device_id))
 
     with Progress(
-            TextColumn("🤗 [progress.description]{task.description}"),
-            BarColumn(style="yellow1", pulse_style="white"),
-            TimeElapsedColumn(),
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(style="yellow1", pulse_style="white"),
+        TimeElapsedColumn(),
     ) as progress:
         progress.add_task("[yellow]Segmenting...", total=None)
 
@@ -179,7 +184,7 @@ def run(config: DiarizationPipelineParams, outputs: Any):
             diarization_pipeline,
             config.num_speakers,
             config.min_speakers,
-            config.max_speakers
+            config.max_speakers,
         )
 
         return post_process_segments_and_transcripts(

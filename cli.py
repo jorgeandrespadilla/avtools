@@ -1,48 +1,75 @@
+import argparse
+
 from rich import print as rprint
-from app.args_parser import parse_args
-from app.utils import FilePath, get_env, is_url
-import app.runner as transcriber
+
+from app.commands.audio_transcriber import TranscriberCommandHandler
+from app.commands.transcript_formatter import FormatterCommandHandler
+from app.commands.video_to_audio_converter import VideoToAudioCommandHandler
+from app.commands.youtube_video_downloader import YouTubeDownloadCommandHandler
+from app.models import ICommandHandler
+from app.utils import ArgumentHelpFormatter, handle_errors
+
+# List of all command handlers
+COMMANDS: list[ICommandHandler] = [
+    TranscriberCommandHandler(),
+    FormatterCommandHandler(),
+    VideoToAudioCommandHandler(),
+    YouTubeDownloadCommandHandler(),
+]
 
 
-def validated_input_file(input_file) -> str:
-    if is_url(input_file):
-        return input_file
+def _check_commands():
+    """
+    Check that all command names are unique.
+    """
 
-    input_path = FilePath(input_file)
-    if not input_path.file_exists():
-        raise FileNotFoundError(f"File not found: '{input_path.full_path}'")
-    return str(input_path.full_path)
+    occurrences: dict[str, list[str]] = {}
+    for command in COMMANDS:
+        handler_name = command.__class__.__name__
+        if command.name in occurrences:
+            occurrences[command.name].append(handler_name)
+        else:
+            occurrences[command.name] = [handler_name]
+
+    has_duplicates = False
+    for command_name, handler_names in occurrences.items():
+        if len(handler_names) > 1:
+            has_duplicates = True
+            rprint(
+                f"Duplicate command name '{command_name}' found in handlers: {', '.join(handler_names)}"
+            )
+
+    if has_duplicates:
+        raise ValueError("Duplicate command names found. Specify unique names for each command.")
 
 
-def validated_output_path(output_path) -> str:
-    output_path = FilePath(output_path)
-    if not output_path.directory_exists():
-        raise FileNotFoundError(f"Directory not found: '{output_path.directory_path}'")
-    return str(output_path.full_path)
-
-
+@handle_errors
 def main():
-    args = parse_args()
-    hf_token = args.hf_token or get_env("HUGGING_FACE_TOKEN")
+    _check_commands()
 
-    try:
-        input_file = validated_input_file(args.input)
-        output_path = validated_output_path(args.output)
+    # Configure the CLI
+    parser = argparse.ArgumentParser(
+        description="AV Tools CLI",
+        formatter_class=ArgumentHelpFormatter,
+    )
+    subparsers = parser.add_subparsers(title="Commands", dest="command")
 
-        transcriber.run(
-            input_file,
-            output_path,
-            # hf_token=hf_token, # TODO: Uncomment this line to use diarization
+    # Add subparsers for each command
+    for command in COMMANDS:
+        command_parser = subparsers.add_parser(
+            command.name, help=command.description, formatter_class=ArgumentHelpFormatter
         )
+        command.configure_args(command_parser)
+        command_parser.set_defaults(func=command.run)
 
-        rprint(f"[bold green]Transcription saved to '{args.output}'[/bold green]")
-    except KeyboardInterrupt:
-        rprint("[bold red]Operation cancelled by the user.[/bold red]")
-    except Exception as e:
-        rprint(f"[bold red]Error:[/bold red] {e}")
+    args = parser.parse_args()
+
+    # Run the command
+    if hasattr(args, "func"):
+        args.func(args)
+    else:
+        parser.print_help()
 
 
 if __name__ == "__main__":
-    # Example Usage:
-    # python cli.py -i video.mp4 -o output.json
     main()
