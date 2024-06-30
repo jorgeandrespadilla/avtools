@@ -3,9 +3,9 @@ from typing import Self
 
 from pydantic import BaseModel, ConfigDict, computed_field, model_validator
 from rich import print as rprint
+from rich.progress import Progress, TimeElapsedColumn, BarColumn, TextColumn, SpinnerColumn
 
 from app.models import ICommandHandler, TranscriptionResultData
-from app.pipelines import transcription, diarization
 from app.utils import FilePath, get_env, is_supported_extension, is_url, list_extensions
 
 
@@ -116,8 +116,25 @@ class _TranscriberCommand:
     def __init__(self, params: _CommandParams):
         self.params = params
 
-
     def execute(self) -> None:
+        # Load AI pipelines
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(style="yellow1", pulse_style="white"),
+            TimeElapsedColumn(),
+        ) as progress:
+            load_models_task = progress.add_task("[yellow]Loading AI pipelines...", total=None)
+
+            from app.pipelines import transcription, diarization
+
+            progress.update(
+                load_models_task,
+                description="[green]AI pipelines loaded.",
+                completed=1,
+                total=1, 
+            )
+
         # Transcription
         transcription_params = transcription.PipelineParams(
             input_file=self.params.input_file_or_url,
@@ -147,7 +164,7 @@ class _TranscriberCommand:
 
     def _build_result(self, diarization_chunks: list, outputs) -> TranscriptionResultData:
         """
-        Build the final transcription result using the output of the 
+        Build the final transcription result using the output of the
         diarization and transcription pipelines.
         """
         return TranscriptionResultData(
@@ -162,8 +179,8 @@ class _TranscriberCommand:
 
 # region Handler
 
-class TranscriberCommandHandler(ICommandHandler):
 
+class TranscriberCommandHandler(ICommandHandler):
     def __init__(self):
         self.name = "transcribe"
         self.description = "Transcribe audio files."
@@ -199,7 +216,6 @@ class TranscriberCommandHandler(ICommandHandler):
             help=f"Provide a hf.co/settings/token for Pyannote.audio to diarise the audio clips. If not provided, it will be searched in the environment variables ({HUGGING_FACE_TOKEN_ENV_VAR}). If not found, diarization will be skipped. To use this feature, follow the instructions in https://huggingface.co/pyannote/speaker-diarization-3.1.",
         )
 
-
     def run(self, args) -> None:
         hf_token = args.hf_token or get_env(HUGGING_FACE_TOKEN_ENV_VAR)
 
@@ -211,7 +227,9 @@ class TranscriberCommandHandler(ICommandHandler):
         )
         _TranscriberCommand(command_params).execute()
 
-        rprint(f"[bold green]Transcription saved to '{command_params.output_file_path}'[/bold green]")
+        rprint(
+            f"[bold green]Transcription saved to '{command_params.output_file_path}'[/bold green]"
+        )
 
 
 # endregion
