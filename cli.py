@@ -4,6 +4,7 @@ from rich import print as printr
 
 from app.commands.audio_transcriber import TranscriberCommandHandler
 from app.commands.transcript_formatter import FormatterCommandHandler
+from app.commands.video_to_audio_converter import VideoToAudioCommandHandler
 from app.models import ICommandHandler
 from app.utils import ArgumentHelpFormatter, handle_errors
 
@@ -11,6 +12,7 @@ from app.utils import ArgumentHelpFormatter, handle_errors
 COMMANDS: list[ICommandHandler] = [
     TranscriberCommandHandler(),
     FormatterCommandHandler(),
+    VideoToAudioCommandHandler(),
 ]
 
 
@@ -52,7 +54,9 @@ def main():
 
     # Add subparsers for each command
     for command in COMMANDS:
-        command_parser = subparsers.add_parser(command.name, help=command.description)
+        command_parser = subparsers.add_parser(
+            command.name, help=command.description, formatter_class=ArgumentHelpFormatter
+        )
         command.configure_args(command_parser)
         command_parser.set_defaults(func=command.run)
 
