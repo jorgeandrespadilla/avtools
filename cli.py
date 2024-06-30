@@ -3,12 +3,14 @@ import argparse
 from rich import print as printr
 
 from app.commands.audio_transcriber import TranscriberCommandHandler
+from app.commands.transcript_formatter import FormatterCommandHandler
 from app.models import ICommandHandler
 from app.utils import ArgumentHelpFormatter, handle_errors
 
 # List of all command handlers
 COMMANDS: list[ICommandHandler] = [
     TranscriberCommandHandler(),
+    FormatterCommandHandler(),
 ]
 
 

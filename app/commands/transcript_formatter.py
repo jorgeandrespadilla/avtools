@@ -3,9 +3,9 @@ import json
 from typing import Self
 
 from pydantic import BaseModel, ConfigDict, computed_field, model_validator
-from rich import print as printr
+from rich import print as rprint
 
-from app.models import TranscriptionChunkData, TranscriptionResultData
+from app.models import ICommandHandler, TranscriptionChunkData, TranscriptionResultData
 from app.utils import FilePath, format_duration, is_supported_extension, list_extensions
 
 
@@ -34,7 +34,7 @@ class TxtFormatter(IFormatter):
         chunks = data.speakers if data.speakers else data.chunks
 
         if verbose:
-            printr("Speaker data available.") if data.speakers else printr(
+            rprint("Speaker data available.") if data.speakers else rprint(
                 "No speaker data available, using chunk data."
             )
 
@@ -43,7 +43,7 @@ class TxtFormatter(IFormatter):
             entry = f"{chunk}\n\n"
             string += entry
             if verbose:
-                printr(entry)
+                rprint(entry)
         return string
 
 
@@ -56,7 +56,7 @@ class SrtFormatter(IFormatter):
             entry = self._format_chunk(chunk, index)
             string += entry
             if verbose:
-                printr(entry)
+                rprint(entry)
         return string
 
     def _format_chunk(self, chunk: TranscriptionChunkData, index: int) -> str:
@@ -77,7 +77,7 @@ class VttFormatter(IFormatter):
             entry = self._format_chunk(chunk, index)
             string += entry
             if verbose:
-                printr(entry)
+                rprint(entry)
         return string
 
     def _format_chunk(self, chunk: TranscriptionChunkData, index: int) -> str:
@@ -98,14 +98,20 @@ TRANSCRIPT_FORMATTERS = {
 # endregion
 
 
+# region Constants
+
+
 SUPPORTED_INPUT_EXTENSIONS = [".json"]
 SUPPORTED_OUTPUT_EXTENSIONS = list(TRANSCRIPT_FORMATTERS.keys())
+
+
+# endregion
 
 
 # region Parameters
 
 
-class CommandParams(BaseModel):
+class _CommandParams(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     input_file: str
@@ -154,17 +160,57 @@ class CommandParams(BaseModel):
 # endregion
 
 
-def execute(params: CommandParams):
+# region Command
+
+
+class _FormatterCommand:
     """Convert transcript in JSON format to a subtitle file or plain text."""
 
-    with open(params.input_file_path.full_path, "r", encoding="utf-8") as file:
-        data = TranscriptionResultData.model_validate(json.load(file))
+    def __init__(self, params: _CommandParams):
+        self.params = params
 
-    if params.group_by_speaker:
-        data = data.group_by_speaker()
+    def execute(self) -> None:
+        with open(self.params.input_file_path.full_path, "r", encoding="utf-8") as file:
+            data = TranscriptionResultData.model_validate(json.load(file))
 
-    formatter_class: IFormatter = TRANSCRIPT_FORMATTERS[params.output_file_path.extension]
-    formatted_transcription = formatter_class.format(data, params.verbose)
+        if self.params.group_by_speaker:
+            data = data.group_by_speaker()
 
-    with open(params.output_file_path.full_path, "w", encoding="utf-8") as file:
-        file.write(formatted_transcription)
+        formatter_class: IFormatter = TRANSCRIPT_FORMATTERS[self.params.output_file_path.extension]
+        formatted_transcription = formatter_class.format(data, self.params.verbose)
+
+        with open(self.params.output_file_path.full_path, "w", encoding="utf-8") as file:
+            file.write(formatted_transcription)
+
+
+# endregion
+
+
+# region Handler
+
+
+class FormatterCommandHandler(ICommandHandler):
+    def __init__(self):
+        self.name = "format"
+        self.description = "Convert transcript in JSON format to a subtitle file or plain text."
+
+    def configure_args(self, parser):
+        parser.add_argument("-i", "--input_file", required=True, help="Input JSON file path")
+        parser.add_argument(
+            "-o",
+            "--output_file",
+            help=f"File where the output will be saved. Format will be inferred from the file extension. Supported formats: {list_extensions(SUPPORTED_OUTPUT_EXTENSIONS)}.",
+        )
+        parser.add_argument("--verbose", action="store_true", help="Print each entry as it's added")
+
+    def run(self, args) -> None:
+        command_params = _CommandParams(
+            input_file=args.input_file, output_file=args.output_file, verbose=args.verbose
+        )
+        _FormatterCommand(command_params).execute()
+        rprint(
+            f"[bold green]Formatted transcript saved to '{command_params.output_file_path}'[/bold green]"
+        )
+
+
+# endregion
