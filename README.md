@@ -62,7 +62,7 @@ poetry run python video_to_audio_converter.py -i <path_to_input_video_file>.mp4 
 To convert a JSON transcript to a subtitle file or plain text file, use the following command:
 
 ```bash
-poetry run python transcript_formatter.py -i <path_to_input_json_file>.json -o <path_to_output_file>.vtt
+poetry run python cli.py format --i <path_to_input_json_file>.json --o <path_to_output_file>.srt
 ```
 
 Supported output formats:
