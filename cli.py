@@ -9,7 +9,7 @@ from app.commands.youtube_video_downloader import YouTubeDownloadCommandHandler
 from app.models import ICommandHandler
 from app.utils import ArgumentHelpFormatter, handle_errors
 
-CLI_VERSION = "1.0.0"
+CLI_VERSION = "1.1.0"
 
 # List of all command handlers
 COMMANDS: list[ICommandHandler] = [
