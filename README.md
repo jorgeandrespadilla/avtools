@@ -91,7 +91,7 @@ To work on the project, follow these steps:
 
 1. Clone the repository
 2. Install the dependencies: `poetry install`
-3. Run the CLI application: `poetry run python -m avtools.cli`
+3. Run the CLI application: `poetry run avtools`
 
 ## License
 
