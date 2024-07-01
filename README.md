@@ -21,12 +21,12 @@ A collection of CLI tools for audio and video processing.
 > 2. Accept pyannote/speaker-diarization-3.1 user conditions
 > 3. Create access token at hf.co/settings/tokens.
 
-Install avtools using `pipx` (`pip install pipx` or `brew install pipx`):
+`avtools` can be installed using `pipx`. If you don't have `pipx` installed, you can install it using `pip` (`pip install pipx` and `python -m pipx ensurepath`) or `brew` (`brew install pipx` and `pipx ensurepath`).
+
+To install the package using `pipx`, run the following command:
 ```bash
 pipx install git+https://github.com/jorgeandrespadilla/avtools.git
 ```
-
-> To uninstall the package, just run `pipx uninstall avtools`.
 
 ## Usage
 
