@@ -90,7 +90,7 @@ poetry run python cli.py youtube-download -u <youtube_video_url> -o <path_to_out
 To work on the project, follow these steps:
 
 1. Clone the repository
-2. Install the dependencies: `poetry install`
+2. Install the dependencies: `poetry install --no-root`
 3. Run the CLI application: `poetry run python cli.py`
 
 ## License
