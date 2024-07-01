@@ -1,6 +1,10 @@
-# AV Tools
-
-A collection of CLI tools for audio and video processing.
+<div align="center">
+  <img src="assets/hero.jpeg" alt="AV Tools" width="240" style="border-radius: 2rem;" />
+  <h1 align="center">AV Tools</h1>
+  <p align="center">
+    A collection of CLI tools for audio and video processing.
+  </p>
+</div>
 
 ## Features
 
@@ -43,7 +47,7 @@ avtools --help
 ### Transcribe
 
 ```bash
-avtools transcribe --i <path_to_audio_file>.mp3 --o <path_to_output_file>.json
+avtools transcribe -i <path_to_audio_file>.mp3 -o <path_to_output_file>.json
 ```
 
 > To use diarization feature, add the `--hf-token` argument with the access token. We do not recommended to use this feature for large audio files.
@@ -61,7 +65,7 @@ avtools video-audio -i <path_to_input_video_file>.mp4 -o <path_to_output_audio_f
 To convert a JSON transcript to a subtitle file or plain text file, use the following command:
 
 ```bash
-avtools format --i <path_to_input_json_file>.json --o <path_to_output_file>.srt
+avtools format -i <path_to_input_json_file>.json -o <path_to_output_file>.srt
 ```
 
 Supported output formats:
