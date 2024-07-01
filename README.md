@@ -11,8 +11,8 @@ A collection of CLI tools for audio and video processing.
 
 ## Prerequisites
 
-- Python 3.11 & Poetry
-- (Optional, only required for video conversion) [FFmpeg v7 full build](https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-full.7z) and add the bin folder to the PATH environment variable.
+- Python 3.11
+- [FFmpeg v7 full build](https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-full.7z) and add the bin folder to the PATH environment variable.
 
 ## Installation
 
@@ -21,9 +21,12 @@ A collection of CLI tools for audio and video processing.
 > 2. Accept pyannote/speaker-diarization-3.1 user conditions
 > 3. Create access token at hf.co/settings/tokens.
 
-1. Clone the repository
-2. Install the dependencies: `poetry install`
-3. Run the CLI application: `poetry run python cli.py`
+Install avtools using `pipx` (`pip install pipx` or `brew install pipx`):
+```bash
+pipx install git+https://github.com/jorgeandrespadilla/avtools.git
+```
+
+> To uninstall the package, just run `pipx uninstall avtools`.
 
 ## Usage
 
@@ -77,6 +80,18 @@ To download the video transcript, add the `--transcript` argument with the langu
 ```bash
 poetry run python cli.py youtube-download -u <youtube_video_url> -o <path_to_output_file>.mp4 --transcript=<language_code>
 ```
+
+## Contributing
+
+### Development
+
+> This project uses [Poetry](https://python-poetry.org/) for dependency management. If you don't have it installed, follow the instructions [here](https://python-poetry.org/docs/#installation).
+
+To work on the project, follow these steps:
+
+1. Clone the repository
+2. Install the dependencies: `poetry install`
+3. Run the CLI application: `poetry run python cli.py`
 
 ## License
 

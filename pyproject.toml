@@ -6,6 +6,9 @@ authors = ["Jorge Andres Padilla <jorgeandres.padillasalgado@gmail.com>"]
 readme = "README.md"
 package-mode = false
 
+[tool.poetry.scripts]
+avtools = "cli:main"
+
 [tool.poetry.dependencies]
 python = "^3.11"
 transformers = "^4.41.2"
