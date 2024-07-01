@@ -125,6 +125,7 @@ class _TranscriberCommand:
             TimeElapsedColumn(),
         ) as progress:
             load_models_task = progress.add_task("[yellow]Loading AI pipelines...", total=None)
+            rprint("Initial AI pipeline load might be slow when it's run for the first time...")
 
             from avtools.pipelines import transcription, diarization
 
