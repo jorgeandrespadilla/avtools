@@ -4,6 +4,7 @@ from rich import print as rprint
 
 from app.commands.audio_transcriber import TranscriberCommandHandler
 from app.commands.transcript_formatter import FormatterCommandHandler
+from app.commands.video_summarizer import SummarizeCommandHandler
 from app.commands.video_to_audio_converter import VideoToAudioCommandHandler
 from app.commands.youtube_video_downloader import YouTubeDownloadCommandHandler
 from app.models import ICommandHandler
@@ -17,6 +18,7 @@ COMMANDS: list[ICommandHandler] = [
     FormatterCommandHandler(),
     VideoToAudioCommandHandler(),
     YouTubeDownloadCommandHandler(),
+    SummarizeCommandHandler(),
 ]
 
 

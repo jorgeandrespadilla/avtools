@@ -1,7 +1,7 @@
 from pathlib import Path
 import subprocess
 from pydantic import BaseModel, ConfigDict, computed_field, model_validator
-from rich import print as printr
+from rich import print as rprint
 from rich.progress import (
     Progress,
     TimeElapsedColumn,
@@ -12,20 +12,30 @@ from rich.progress import (
 )
 from typing_extensions import Self
 
+from app.models import ICommandHandler
 from app.utils import (
     FilePath,
     check_ffmpeg_installed,
     flatten_list,
+    get_env,
     is_supported_extension,
     list_extensions,
 )
 
+
+# region Constants
+
 SUPPORTED_INPUT_VIDEO_EXTENSIONS = [".mp4", ".mkv", ".avi", ".mov"]
 SUPPORTED_INPUT_TRANSCRIPT_EXTENSIONS = [".vtt"]
+OPENAI_API_KEY_ENV_VAR = "OPENAI_API_KEY"
+
+# endregion
 
 
 # region Parameters
-class CommandParams(BaseModel):
+
+
+class _CommandParams(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     input_video_file: str
@@ -91,7 +101,7 @@ class CommandParams(BaseModel):
                 )
         else:
             if self.verbose:
-                printr(f"Creating output directory: '{self.output_dir_path}'")
+                rprint(f"Creating output directory: '{self.output_dir_path}'")
             self.output_dir_path.mkdir(parents=True, exist_ok=True)
 
         return self
@@ -120,7 +130,7 @@ class VideoSummaryParams(BaseModel):
             raise FileNotFoundError(
                 f"Output directory not found: '{self.output_summary_file.parent}' (this should not happen)."
             )
-        
+
         if self.output_extracts_dir.exists():
             if not self.output_extracts_dir.is_dir():
                 raise NotADirectoryError(
@@ -128,7 +138,7 @@ class VideoSummaryParams(BaseModel):
                 )
         else:
             if self.verbose:
-                printr(f"Creating extracts output directory: '{self.output_extracts_dir}'")
+                rprint(f"Creating extracts output directory: '{self.output_extracts_dir}'")
             self.output_extracts_dir.mkdir(parents=True, exist_ok=True)
 
         return self
@@ -275,11 +285,14 @@ class MarkdownSummaryFormatter:
 # region Command
 
 
-class SummarizeCommand:
+class _SummarizeCommand:
     """
     Summarize a video by taking its transcript (required) and generating a detailed summary.
     It can also include extracts from the most important parts of the video.
 
+    Remarks
+    ----
+    - If the output folder does not exist, it will be created.
     """
 
     """
@@ -298,13 +311,13 @@ class SummarizeCommand:
     4. Save the TL;DR summary and the detailed summary in the output folder. For each section, save the summary and the list of extracts with the corresponding timestamps.
     """
 
-    def __init__(self, params: CommandParams):
+    def __init__(self, params: _CommandParams):
         self.params = params
         self.summary_params = VideoSummaryParams(
             transcript=self._load_transcript(),
             output_summary_file=self.params.output_dir_path / "summary.md",
             output_extracts_dir=self.params.output_dir_path / "video_extracts",
-            verbose=self.params.verbose
+            verbose=self.params.verbose,
         )
         self.summary = VideoSummaryData(title="Video Summary")
 
@@ -344,19 +357,18 @@ class SummarizeCommand:
         output = subprocess.run(["ffmpeg", *command_args], capture_output=True)
 
         if self.params.verbose:
-            printr(output.stdout.decode("utf-8") or output.stderr.decode("utf-8"))
+            rprint(output.stdout.decode("utf-8") or output.stderr.decode("utf-8"))
         if output.returncode != 0:
             raise Exception(
                 "An error occurred while generating the video extracts. Please enable verbose mode to check the ffmpeg output for more details."
             )
-        
+
     def _save_summary(self) -> None:
         """
         Save the video summary to a file.
         """
         formatted_summary = MarkdownSummaryFormatter.format_summary(
-            self.summary, 
-            self.summary_params.output_summary_file.parent
+            self.summary, self.summary_params.output_summary_file.parent
         )
         with open(self.summary_params.output_summary_file, "w", encoding="utf-8") as f:
             f.write(formatted_summary)
@@ -365,11 +377,55 @@ class SummarizeCommand:
 # endregion
 
 
-def execute(params: CommandParams) -> None:
-    """
-    Summarize a video by taking its transcript and generating a detailed summary.
+# region Handler
 
-    Remarks:
-    - If the output folder does not exist, it will be created.
-    """
-    SummarizeCommand(params).execute()
+
+class SummarizeCommandHandler(ICommandHandler):
+    def __init__(self):
+        self.name = "summarize"
+        self.description = "Summarize a video by taking its transcript (required) and generating a detailed summary."
+
+    def configure_args(self, parser):
+        parser.add_argument(
+            "-v", "--input_video", required=True, type=str, help="Input video file path."
+        )
+        parser.add_argument(
+            "-t", "--transcript", required=True, type=str, help="Input transcript file path."
+        )
+        parser.add_argument(
+            "-o",
+            "--output_dir",
+            type=str,
+            help="Output directory path (where the summary will be saved with all the video extracts). If the directory does not exist, it will be created.",
+        )
+        parser.add_argument(
+            "--openai_key",
+            required=False,
+            default=None,
+            type=str,
+            help=f"Provide a valid OpenAI API key for summarizing the video. If not provided, it will be searched in the environment variables ({OPENAI_API_KEY_ENV_VAR}). If not found, the command will fail.",
+        )
+        parser.add_argument(
+            "--verbose", action="store_true", help="Print ffmpeg output (for debugging purposes)"
+        )
+
+    def run(self, args) -> None:
+        openai_key = args.openai_key or get_env(OPENAI_API_KEY_ENV_VAR)
+        if not openai_key:
+            raise ValueError(
+                f"OpenAI API key not provided. Please provide it as an argument or set it in the environment variable '{OPENAI_API_KEY_ENV_VAR}'."
+            )
+
+        command_params = _CommandParams(
+            input_video_file=args.input_video,
+            input_transcript_file=args.transcript,
+            output_dir=args.output_dir,
+            openai_key=openai_key,
+            verbose=args.verbose,
+        )
+        _SummarizeCommand(command_params).execute()
+
+        rprint(f"[bold green]Video summary saved to '{command_params.output_dir}'[/bold green]")
+
+
+# endregion
