@@ -31,19 +31,19 @@ pipx install git+https://github.com/jorgeandrespadilla/avtools.git
 ## Usage
 
 ```bash
-poetry run python cli.py
+avtools <command> [options]
 ```
 
 For more information on the available commands, use the `--help` argument:
 
 ```bash
-poetry run python cli.py --help
+avtools --help
 ```
 
 ### Transcribe
 
 ```bash
-poetry run python cli.py transcribe --i <path_to_audio_file>.mp3 --o <path_to_output_file>.json
+avtools transcribe --i <path_to_audio_file>.mp3 --o <path_to_output_file>.json
 ```
 
 > To use diarization feature, add the `--hf-token` argument with the access token. We do not recommended to use this feature for large audio files.
@@ -51,7 +51,7 @@ poetry run python cli.py transcribe --i <path_to_audio_file>.mp3 --o <path_to_ou
 ### Convert Video to Audio
 
 ```bash
-poetry run python cli.py video-audio -i <path_to_input_video_file>.mp4 -o <path_to_output_audio_file>.mp3
+avtools video-audio -i <path_to_input_video_file>.mp4 -o <path_to_output_audio_file>.mp3
 ```
 
 ### Convert Transcripts to Different Formats
@@ -61,7 +61,7 @@ poetry run python cli.py video-audio -i <path_to_input_video_file>.mp4 -o <path_
 To convert a JSON transcript to a subtitle file or plain text file, use the following command:
 
 ```bash
-poetry run python cli.py format --i <path_to_input_json_file>.json --o <path_to_output_file>.srt
+avtools format --i <path_to_input_json_file>.json --o <path_to_output_file>.srt
 ```
 
 Supported output formats:
@@ -72,13 +72,13 @@ Supported output formats:
 ### Download YouTube Video
 
 ```bash
-poetry run python cli.py youtube-download -u <youtube_video_url> -o <path_to_output_file>.mp4
+avtools youtube-download -u <youtube_video_url> -o <path_to_output_file>.mp4
 ```
 
 To download the video transcript, add the `--transcript` argument with the language code (e.g. `en` for English).
 
 ```bash
-poetry run python cli.py youtube-download -u <youtube_video_url> -o <path_to_output_file>.mp4 --transcript=<language_code>
+avtools youtube-download -u <youtube_video_url> -o <path_to_output_file>.mp4 --transcript=<language_code>
 ```
 
 ## Contributing
@@ -90,8 +90,8 @@ poetry run python cli.py youtube-download -u <youtube_video_url> -o <path_to_out
 To work on the project, follow these steps:
 
 1. Clone the repository
-2. Install the dependencies: `poetry install --no-root`
-3. Run the CLI application: `poetry run python cli.py`
+2. Install the dependencies: `poetry install`
+3. Run the CLI application: `poetry run python -m avtools.cli`
 
 ## License
 
