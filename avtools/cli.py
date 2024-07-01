@@ -2,12 +2,12 @@ import argparse
 
 from rich import print as rprint
 
-from app.commands.audio_transcriber import TranscriberCommandHandler
-from app.commands.transcript_formatter import FormatterCommandHandler
-from app.commands.video_to_audio_converter import VideoToAudioCommandHandler
-from app.commands.youtube_video_downloader import YouTubeDownloadCommandHandler
-from app.models import ICommandHandler
-from app.utils import ArgumentHelpFormatter, handle_errors
+from avtools.commands.audio_transcriber import TranscriberCommandHandler
+from avtools.commands.transcript_formatter import FormatterCommandHandler
+from avtools.commands.video_to_audio_converter import VideoToAudioCommandHandler
+from avtools.commands.youtube_video_downloader import YouTubeDownloadCommandHandler
+from avtools.models import ICommandHandler
+from avtools.utils import ArgumentHelpFormatter, handle_errors
 
 CLI_VERSION = "1.1.0"
 

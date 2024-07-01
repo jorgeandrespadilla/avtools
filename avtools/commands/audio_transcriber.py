@@ -5,8 +5,8 @@ from pydantic import BaseModel, ConfigDict, computed_field, model_validator
 from rich import print as rprint
 from rich.progress import Progress, TimeElapsedColumn, BarColumn, TextColumn, SpinnerColumn
 
-from app.models import ICommandHandler, TranscriptionResultData
-from app.utils import FilePath, get_env, is_supported_extension, is_url, list_extensions
+from avtools.models import ICommandHandler, TranscriptionResultData
+from avtools.utils import FilePath, get_env, is_supported_extension, is_url, list_extensions
 
 
 # region Constants
@@ -126,7 +126,7 @@ class _TranscriberCommand:
         ) as progress:
             load_models_task = progress.add_task("[yellow]Loading AI pipelines...", total=None)
 
-            from app.pipelines import transcription, diarization
+            from avtools.pipelines import transcription, diarization
 
             progress.update(
                 load_models_task,

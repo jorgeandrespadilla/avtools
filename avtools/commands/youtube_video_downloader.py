@@ -18,8 +18,8 @@ from rich.progress import (
 from typing_extensions import Self
 from youtube_transcript_api import YouTubeTranscriptApi, NoTranscriptFound
 
-from app.models import ICommandHandler, TranscriptionChunkData, TranscriptionResultData
-from app.utils import (
+from avtools.models import ICommandHandler, TranscriptionChunkData, TranscriptionResultData
+from avtools.utils import (
     FilePath,
     PauseRichProgress,
     check_ffmpeg_installed,

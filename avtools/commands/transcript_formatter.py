@@ -5,8 +5,8 @@ from typing import Self
 from pydantic import BaseModel, ConfigDict, computed_field, model_validator
 from rich import print as rprint
 
-from app.models import ICommandHandler, TranscriptionChunkData, TranscriptionResultData
-from app.utils import FilePath, format_duration, is_supported_extension, list_extensions
+from avtools.models import ICommandHandler, TranscriptionChunkData, TranscriptionResultData
+from avtools.utils import FilePath, format_duration, is_supported_extension, list_extensions
 
 
 # region Formatters
