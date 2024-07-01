@@ -93,6 +93,15 @@ To work on the project, follow these steps:
 2. Install the dependencies: `poetry install`
 3. Run the CLI application: `poetry run avtools`
 
+### Additional Information
+
+The following resources may be helpful when solving issues related to PyTorch package installation with Poetry:
+- https://github.com/python-poetry/poetry/issues/7685
+- https://github.com/Vaibhavs10/insanely-fast-whisper/issues/183
+- https://github.com/python-poetry/poetry/issues/2415
+
+Due to the way PyTorch is built, the source URLs have to be hard-coded in the `pyproject.toml` file to avoid installation issues (to support new Python versions, we should add more URLs to the `torch` packages). This is a workaround to avoid issues when working with private repositories.
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
