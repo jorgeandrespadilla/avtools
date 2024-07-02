@@ -12,8 +12,8 @@ from rich.progress import (
 )
 from typing_extensions import Self
 
-from app.models import ICommandHandler
-from app.utils import (
+from avtools.models import ICommandHandler
+from avtools.utils import (
     FilePath,
     check_ffmpeg_installed,
     flatten_list,
