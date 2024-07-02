@@ -9,7 +9,7 @@ from torchaudio import functional as F
 from transformers.pipelines.audio_utils import ffmpeg_read
 from rich.progress import Progress, TimeElapsedColumn, BarColumn, TextColumn, SpinnerColumn
 
-from app.utils import is_url
+from avtools.utils import is_url
 
 
 class PipelineParams(BaseModel):

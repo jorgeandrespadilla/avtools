@@ -1,19 +1,34 @@
 [tool.poetry]
 name = "avtools"
-version = "1.1.0"
+version = "1.2.0"
 description = "A collection of CLI tools for audio and video processing."
 authors = ["Jorge Andres Padilla <jorgeandres.padillasalgado@gmail.com>"]
 readme = "README.md"
-package-mode = false
+license = "MIT"
+
+[tool.poetry.scripts]
+avtools = "avtools.cli:main"
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = "~3.11"
 transformers = "^4.41.2"
 optimum = "^1.17.1"
 accelerate = "^0.27.2"
-torch = {version = "^2.3.1+cu121", source = "pytorch-cuda"}
-torchvision = {version = "^0.18.1+cu121", source = "pytorch-cuda"}
-torchaudio = {version = "^2.3.1+cu121", source = "pytorch-cuda"}
+torch = [
+    {url = "https://download.pytorch.org/whl/cu121/torch-2.3.1%2Bcu121-cp311-cp311-linux_x86_64.whl", python = "~3.11", markers = "sys_platform == 'linux'"},
+    {url = "https://download.pytorch.org/whl/cu121/torch-2.3.1%2Bcu121-cp311-cp311-win_amd64.whl", python = "~3.11", markers = "sys_platform == 'win32'"},
+    {url = "https://download.pytorch.org/whl/cpu/torch-2.3.1-cp311-none-macosx_11_0_arm64.whl", python = "~3.11", markers = "sys_platform == 'darwin'"}
+]
+torchvision = [
+    {url = "https://download.pytorch.org/whl/cu121/torchvision-0.18.1%2Bcu121-cp311-cp311-linux_x86_64.whl", python = "~3.11", markers = "sys_platform == 'linux'"},
+    {url = "https://download.pytorch.org/whl/cu121/torchvision-0.18.1%2Bcu121-cp311-cp311-win_amd64.whl", python = "~3.11", markers = "sys_platform == 'win32'"},
+    {url = "https://download.pytorch.org/whl/cpu/torchvision-0.18.1-cp311-cp311-macosx_11_0_arm64.whl", python = "~3.11", markers = "sys_platform == 'darwin'"}
+]
+torchaudio = [
+    {url = "https://download.pytorch.org/whl/cu121/torchaudio-2.3.1%2Bcu121-cp311-cp311-linux_x86_64.whl", python = "~3.11", markers = "sys_platform == 'linux'"},
+    {url = "https://download.pytorch.org/whl/cu121/torchaudio-2.3.1%2Bcu121-cp311-cp311-win_amd64.whl", python = "~3.11", markers = "sys_platform == 'win32'"},
+    {url = "https://download.pytorch.org/whl/cpu/torchaudio-2.3.1-cp311-cp311-macosx_11_0_arm64.whl", python = "~3.11", markers = "sys_platform == 'darwin'"}
+]
 pydantic = "^2.7.4"
 rich = "^13.7.1"
 python-dotenv = "^1.0.1"
@@ -22,12 +37,6 @@ pytube = "^15.0.0"
 numpy = "^1.26.4"
 openai = "^1.35.7"
 youtube-transcript-api = "^0.6.2"
-
-[[tool.poetry.source]]
-name = "pytorch-cuda"
-url = "https://download.pytorch.org/whl/cu121"
-priority = "supplemental"
-
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.5.0"

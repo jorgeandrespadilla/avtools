@@ -3,7 +3,7 @@ import argparse
 from typing import Self
 from pydantic import BaseModel, computed_field, field_validator, model_validator
 
-from app.utils import format_duration
+from avtools.utils import format_duration
 
 
 # region Base Models
