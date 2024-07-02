@@ -44,6 +44,12 @@ For more information on the available commands, use the `--help` argument:
 avtools --help
 ```
 
+For more information on a specific command, use the `--help` argument with the command name:
+
+```bash
+avtools <command> --help
+```
+
 ### Transcribe
 
 ```bash
@@ -88,17 +94,11 @@ avtools youtube-download -u <youtube_video_url> -o <path_to_output_file>.mp4 --t
 ## Summarize Videos
 
 ```bash
-poetry run python video_summarizer.py \
+avtools summarize \
     -v <path_to_input_video_file>.mp4 \
     -t <path_to_output_transcript_file>.vtt \
     -o <path_to_output_directory>
     --openai_key <openai_api_key>
-```
-
-For more information on the available options, run the following command:
-
-```bash
-poetry run python video_summarizer.py --help
 ```
 
 ## Contributing
