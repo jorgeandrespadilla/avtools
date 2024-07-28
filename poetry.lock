@@ -2831,14 +2831,14 @@ with-hooks = ["faiss-gpu (>=1.6.3)", "record-keeper (>=0.9.32)", "tensorboard"]
 with-hooks-cpu = ["faiss-cpu (>=1.6.3)", "record-keeper (>=0.9.32)", "tensorboard"]
 
 [[package]]
-name = "pytube"
-version = "15.0.0"
-description = "Python 3 library for downloading YouTube Videos."
+name = "pytubefix"
+version = "6.6.3"
+description = "Python3 library for downloading YouTube Videos."
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "pytube-15.0.0-py3-none-any.whl", hash = "sha256:07b9904749e213485780d7eb606e5e5b8e4341aa4dccf699160876da00e12d78"},
-    {file = "pytube-15.0.0.tar.gz", hash = "sha256:076052efe76f390dfa24b1194ff821d4e86c17d41cb5562f3a276a8bcbfc9d1d"},
+    {file = "pytubefix-6.6.3-py3-none-any.whl", hash = "sha256:d5a9e36d21c39dd60f8729ffe8b337b3dbea2e6269834710fb30bdcf05bf6f1b"},
+    {file = "pytubefix-6.6.3.tar.gz", hash = "sha256:f5827fe5fb9926280d53f660ac81cf08ad7526be296ef08d410695a3395062d8"},
 ]
 
 [[package]]
@@ -4553,4 +4553,4 @@ requests = "*"
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.11"
-content-hash = "1ca2476326bfb8470ca5810afed76890fbe09eeb3ab23b769693885903c3fd0e"
+content-hash = "6936c908c196165ad653556a4c9f86a11eedc9dde141e3285c9b740ecd33ab80"

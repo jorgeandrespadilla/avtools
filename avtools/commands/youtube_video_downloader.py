@@ -4,7 +4,7 @@ import subprocess
 import tempfile
 from typing import Literal
 from pydantic import BaseModel, ConfigDict, computed_field, model_validator
-from pytube import YouTube, StreamQuery, Stream, exceptions
+from pytubefix import YouTube, StreamQuery, Stream, exceptions
 from rich import print as rprint, prompt
 from rich.progress import (
     Progress,

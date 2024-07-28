@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "avtools"
-version = "1.2.0"
+version = "1.2.1"
 description = "A collection of CLI tools for audio and video processing."
 authors = ["Jorge Andres Padilla <jorgeandres.padillasalgado@gmail.com>"]
 readme = "README.md"
@@ -33,10 +33,10 @@ pydantic = "^2.7.4"
 rich = "^13.7.1"
 python-dotenv = "^1.0.1"
 pyannote-audio = "^3.3.1"
-pytube = "^15.0.0"
 numpy = "^1.26.4"
 openai = "^1.35.7"
 youtube-transcript-api = "^0.6.2"
+pytubefix = "^6.6.3"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.5.0"
