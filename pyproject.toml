@@ -33,9 +33,9 @@ pydantic = "^2.7.4"
 rich = "^13.7.1"
 python-dotenv = "^1.0.1"
 pyannote-audio = "^3.3.1"
-pytube = "^15.0.0"
 numpy = "^1.26.4"
 youtube-transcript-api = "^0.6.2"
+pytubefix = "^6.6.3"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.5.0"
