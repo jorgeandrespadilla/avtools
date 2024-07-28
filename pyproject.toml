@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "avtools"
-version = "1.2.0"
+version = "1.2.1"
 description = "A collection of CLI tools for audio and video processing."
 authors = ["Jorge Andres Padilla <jorgeandres.padillasalgado@gmail.com>"]
 readme = "README.md"
