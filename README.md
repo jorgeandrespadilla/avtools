@@ -32,6 +32,11 @@ To install the package using `pipx`, run the following command:
 pipx install git+https://github.com/jorgeandrespadilla/avtools.git
 ```
 
+To upgrade the package, run the following command:
+```bash
+pipx upgrade avtools
+```
+
 ## Usage
 
 ```bash
