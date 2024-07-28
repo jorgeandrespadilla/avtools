@@ -110,13 +110,7 @@ avtools summarize \
 
 ### Development
 
-> This project uses [Poetry](https://python-poetry.org/) for dependency management. If you don't have it installed, follow the instructions [here](https://python-poetry.org/docs/#installation).
-
-To work on the project, follow these steps:
-
-1. Clone the repository
-2. Install the dependencies: `poetry install`
-3. Run the CLI application: `poetry run avtools`
+See the [CONTRIBUTING.md](CONTRIBUTING.md) file for more information on how to contribute to this project.
 
 ### Testing
 
