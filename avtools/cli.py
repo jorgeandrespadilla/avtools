@@ -9,7 +9,7 @@ from avtools.commands.youtube_video_downloader import YouTubeDownloadCommandHand
 from avtools.models import ICommandHandler
 from avtools.utils import ArgumentHelpFormatter, handle_errors
 
-CLI_VERSION = "1.2.2"
+CLI_VERSION = "1.3.0"
 
 # List of all command handlers
 COMMANDS: list[ICommandHandler] = [
