@@ -29,8 +29,8 @@ torchaudio = [
     {url = "https://download.pytorch.org/whl/cu121/torchaudio-2.3.1%2Bcu121-cp311-cp311-win_amd64.whl", python = "~3.11", markers = "sys_platform == 'win32'"},
     {url = "https://download.pytorch.org/whl/cpu/torchaudio-2.3.1-cp311-cp311-macosx_11_0_arm64.whl", python = "~3.11", markers = "sys_platform == 'darwin'"}
 ]
-pydantic = "^2.7.4"
-rich = "^13.7.1"
+pydantic = "^2.9.2"
+rich = "^13.9.4"
 python-dotenv = "^1.0.1"
 pyannote-audio = "^3.3.1"
 numpy = "^1.26.4"
