@@ -42,9 +42,14 @@ class _CommandParams(BaseModel):
     """Hugging Face API token for diarization. If omitted, diarization will be disabled."""
 
     # Additional parameters
-    device_id: str = "cuda:0"
+    device_id: str | None = None
     """
-    Device ID to use for processing. Use 'cuda:{#}' for GPU devices or 'mps' for Mac devices.
+    Device ID to use for processing. If not provided, it will be automatically selected based on availability (GPU preferred if CUDA is available, otherwise CPU).
+    
+    If you want to use a specific device, here are some examples:
+    - 'cuda:{#}' for GPU devices
+    - 'mps' for Mac devices
+    - 'cpu' for CPU devices
     """
 
     enable_timestamps: bool = True

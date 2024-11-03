@@ -9,14 +9,14 @@ from torchaudio import functional as F
 from transformers.pipelines.audio_utils import ffmpeg_read
 from rich.progress import Progress, TimeElapsedColumn, BarColumn, TextColumn, SpinnerColumn
 
-from avtools.utils import is_url
+from avtools.utils import is_url, resolve_device_type
 
 
 class PipelineParams(BaseModel):
     input_file: str
     hf_token: str
-    device_id: str
     diarization_model: str = "pyannote/speaker-diarization-3.1"
+    device_id: str | None = None
     num_speakers: int | None = None
     min_speakers: int | None = None
     max_speakers: int | None = None
@@ -163,11 +163,14 @@ def post_process_segments_and_transcripts(new_segments, transcript, group_by_spe
 
 
 def run(config: PipelineParams, outputs: Any):
+    device = resolve_device_type(config.device_id)
+    
     diarization_pipeline = Pipeline.from_pretrained(
         checkpoint_path=config.diarization_model,
         use_auth_token=config.hf_token,
     )
-    diarization_pipeline.to(torch.device(config.device_id))
+
+    diarization_pipeline.to(torch.device(device))
 
     with Progress(
         SpinnerColumn(),

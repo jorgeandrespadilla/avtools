@@ -90,6 +90,14 @@ To download the video transcript, add the `--transcript` argument with the langu
 avtools youtube-download -u <youtube_video_url> -o <path_to_output_file>.mp4 --transcript=<language_code>
 ```
 
+## Experimental Features
+
+**How to use Flash-Attention with `avtools` transcribe command?**
+
+Install it via `pipx runpip avtools install flash-attn --no-build-isolation`.
+
+> We only recommend using Flash-Attention if your GPU supports it.
+
 ## Contributing
 
 ### Development

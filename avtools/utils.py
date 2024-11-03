@@ -100,6 +100,17 @@ def format_duration(
     return formatted_time
 
 
+def resolve_device_type(device_id: str | None) -> str:
+    """Check if CUDA is available."""
+    if device_id:
+        return device_id
+    
+    from torch.cuda import is_available as is_cuda_available
+    if is_cuda_available():
+        return "cuda:0"
+    return "cpu"
+
+
 # endregion
 
 
