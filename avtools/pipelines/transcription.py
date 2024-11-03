@@ -9,7 +9,7 @@ from rich.progress import Progress, TimeElapsedColumn, BarColumn, TextColumn, Sp
 class PipelineParams(BaseModel):
     input_file: str
     device_id: str
-    model: str = "openai/whisper-large-v3"
+    model: str = "openai/whisper-large-v3-turbo"
     task: Literal["transcribe", "translate"] = "transcribe"
     language: str | None = None  # Whisper auto-detects language when set to None
     batch_size: int = 24  # Reduce if running out of memory
