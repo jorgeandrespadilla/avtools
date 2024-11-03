@@ -10,11 +10,11 @@ from avtools.utils import resolve_device_type
 
 class PipelineParams(BaseModel):
     input_file: str
+    batch_size: int
     model_id: str = "openai/whisper-large-v3-turbo"
     task: Literal["transcribe", "translate"] = "transcribe"
     device_id: str | None = None
     language: str | None = None  # Whisper auto-detects language when set to None
-    batch_size: int = 24  # Reduce if running out of memory
     enable_timestamps: bool = False
 
 
@@ -39,7 +39,7 @@ def run(config: PipelineParams):
         tokenizer=processor.tokenizer,
         feature_extractor=processor.feature_extractor,
         chunk_length_s=30,
-        batch_size=config.batch_size, # Batch size for inference (set based on the device's memory)
+        batch_size=config.batch_size, # Batch size for inference
         torch_dtype=torch_dtype,
         device=device,
     )

@@ -35,6 +35,9 @@ class _CommandParams(BaseModel):
     output_file: str
     """Output audio file path (do not use this field directly, use the output_file_path property instead)."""
 
+    batch_size: int
+    """Number of parallel batches to compute."""
+
     language: str | None = None
     """Language code to use for transcription."""
 
@@ -144,6 +147,7 @@ class _TranscriberCommand:
         # Transcription
         transcription_params = transcription.PipelineParams(
             input_file=self.params.input_file_or_url,
+            batch_size=self.params.batch_size,
             device_id=self.params.device_id,
             enable_timestamps=self.params.enable_timestamps,
             language=self.params.language,
@@ -215,6 +219,13 @@ class TranscriberCommandHandler(ICommandHandler):
             help="Provide the language code for the audio file (eg. 'en', 'es'). If not provided, the language will be detected automatically. For a list of supported languages, visit https://github.com/openai/whisper#available-models-and-languages.",
         )
         parser.add_argument(
+            "--batch-size",
+            required=False,
+            default=24,
+            type=int,
+            help="Number of parallel batches to compute. Change this value based on your device's memory. If you face memory issues, reduce this value (eg. 16).",
+        )
+        parser.add_argument(
             "--hf-token",
             required=False,
             default=None,
@@ -228,6 +239,7 @@ class TranscriberCommandHandler(ICommandHandler):
         command_params = _CommandParams(
             input_file=args.input,
             output_file=args.output,
+            batch_size=args.batch_size,
             language=args.language,
             hf_token=hf_token,  # Use diarization model
         )
