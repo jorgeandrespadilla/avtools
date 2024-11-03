@@ -1,17 +1,19 @@
 from typing import Literal
 from pydantic import BaseModel
 import torch
-from transformers import pipeline, AutoProcessor, AutoModelForSpeechSeq2Seq
+from transformers import pipeline, AutoProcessor, AutoModelForSpeechSeq2Seq, logging
 from transformers.utils import is_flash_attn_2_available
 from rich.progress import Progress, TimeElapsedColumn, BarColumn, TextColumn, SpinnerColumn
 
 from avtools.utils import resolve_device_type
 
+# Comment out the following line to enable logging for debugging purposes
+logging.set_verbosity_error()
 
 class PipelineParams(BaseModel):
     input_file: str
     batch_size: int
-    model_id: str = "openai/whisper-large-v3-turbo"
+    transcription_model_id: str = "openai/whisper-large-v3-turbo"
     task: Literal["transcribe", "translate"] = "transcribe"
     device_id: str | None = None
     language: str | None = None  # Whisper auto-detects language when set to None
@@ -23,7 +25,7 @@ def run(config: PipelineParams):
     device = resolve_device_type(config.device_id)
 
     model = AutoModelForSpeechSeq2Seq.from_pretrained(
-        config.model_id, 
+        config.transcription_model_id, 
         torch_dtype=torch_dtype, 
         low_cpu_mem_usage=True,
         use_safetensors=True,
@@ -31,7 +33,7 @@ def run(config: PipelineParams):
     )
     model.to(device)
 
-    processor = AutoProcessor.from_pretrained(config.model_id)
+    processor = AutoProcessor.from_pretrained(config.transcription_model_id)
     
     pipe = pipeline(
         "automatic-speech-recognition",
