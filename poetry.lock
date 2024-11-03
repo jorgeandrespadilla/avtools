@@ -2768,13 +2768,13 @@ with-hooks-cpu = ["faiss-cpu (>=1.6.3)", "record-keeper (>=0.9.32)", "tensorboar
 
 [[package]]
 name = "pytubefix"
-version = "6.6.3"
+version = "8.2.0"
 description = "Python3 library for downloading YouTube Videos."
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "pytubefix-6.6.3-py3-none-any.whl", hash = "sha256:d5a9e36d21c39dd60f8729ffe8b337b3dbea2e6269834710fb30bdcf05bf6f1b"},
-    {file = "pytubefix-6.6.3.tar.gz", hash = "sha256:f5827fe5fb9926280d53f660ac81cf08ad7526be296ef08d410695a3395062d8"},
+    {file = "pytubefix-8.2.0-py3-none-any.whl", hash = "sha256:df0fd990a25ef130738c18cdf3756ce8699b69a74e52db8c18acd2ba2225f706"},
+    {file = "pytubefix-8.2.0.tar.gz", hash = "sha256:52d72f630169da3dc9db52e960a6b948d0bdae4387a93c8314c5c1a311f6c735"},
 ]
 
 [[package]]
@@ -4478,4 +4478,4 @@ requests = "*"
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.11"
-content-hash = "f06614c460cd52602528e00d582c74498c3b7a7cb674eb40b9c49a4091d6bf6c"
+content-hash = "339734f0d0bca57a4b48ca2d1e9aeb60c98a1e87191f5afe5dbef39ee43f1b7e"

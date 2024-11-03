@@ -35,7 +35,7 @@ python-dotenv = "^1.0.1"
 pyannote-audio = "^3.3.1"
 numpy = "^1.26.4"
 youtube-transcript-api = "^0.6.2"
-pytubefix = "^6.6.3"
+pytubefix = "^8.2.0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.5.0"

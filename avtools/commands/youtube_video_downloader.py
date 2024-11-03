@@ -169,7 +169,7 @@ class MediaStreams:
             return True
         return self.audio is not None
 
-    def download_video(self, output_path: FilePath) -> str:
+    def download_video(self, output_path: FilePath) -> str | None:
         """
         Download the video stream.
 
@@ -177,7 +177,7 @@ class MediaStreams:
         - output_path: Output file path.
 
         Returns:
-        - The path to the downloaded video file.
+        - The path to the downloaded video file or None if the download was skipped or failed.
         """
         return self.video.download(
             output_path=str(output_path.directory_path),
@@ -185,7 +185,7 @@ class MediaStreams:
             skip_existing=False,  # Always download the video stream
         )
 
-    def download_audio(self, output_path: FilePath) -> str:
+    def download_audio(self, output_path: FilePath) -> str | None:
         """
         Download the audio stream.
 
@@ -353,6 +353,8 @@ class _YouTubeDownloadCommand:
                 temp_video_path = media_streams.download_video(
                     FilePath(Path(temp_dir) / "video.mp4")
                 )
+                if not temp_video_path:
+                    raise Exception("Failed to download the video stream.")
 
                 self._register_progress_callbacks(
                     yt,
@@ -364,6 +366,8 @@ class _YouTubeDownloadCommand:
                 temp_audio_path = media_streams.download_audio(
                     FilePath(Path(temp_dir) / "audio.mp4")
                 )
+                if not temp_audio_path:
+                    raise Exception("Failed to download the audio stream.")
 
                 # Merge video and audio files
                 merge_task = progress.add_task("[yellow]Merging video and audio...", total=None)
@@ -408,6 +412,7 @@ class _YouTubeDownloadCommand:
         except exceptions.LiveStreamError as e:
             raise Exception("The provided video is a live stream.") from e
         except exceptions.VideoUnavailable as e:
+            print(e)
             raise Exception("The provided video is unavailable.") from e
         except Exception as e:
             raise Exception("An error occurred while checking the video availability.") from e
